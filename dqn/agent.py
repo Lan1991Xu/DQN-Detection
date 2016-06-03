@@ -39,7 +39,16 @@ class Agent(BaseModel):
             self.cnn_l4, self.cnn_w['l4_w'], self.cnn_w['l4_b'] = cov_layer(self.cnn_l3, 384, [3, 3], [1, 1], initializer = initializer, activation = activation, name = 'cnn_conv4')
 
             # CNN_l5
-            self.cnn_l5, self.cnn_w['l5_w'], self.cnn_w[]
+            self.cnn_l5, self.cnn_w['l5_w'], self.cnn_w['l5_b'] = cov_layer(self.cnn_l4, 256, [3, 3], [1, 1], initializer = initializer, activation = activation, name = 'cnn_conv5')
+            self.pool5 = tf.nn.max_pool(self.cnn_l5, ksize = [1, 3, 3, 1], stride = [1, 2, 2, 1], padding = 'SAME', name = 'pool5')
+
+            # CNN_l5 reshape
+            self.cnn_l5_flat = tf.reshape(self.pool5, [config.batch_size, -1], name = 'l5_flat')
+            
+            # CNN_output
+            self.cnn_output, self.w['output_w'], self.w['output_b'] = fc_layer(self.cnn_l5_flat, 4096, activation = activation, name = 'output')
+            
+            return self.cnn_output
 
 
 
