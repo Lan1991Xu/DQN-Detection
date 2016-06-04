@@ -26,9 +26,20 @@ def cov_layer(inp,
 
 def fc_layer(inp,
             output_dim,
-            initializer = tf.contrib.layers.xavier_initializer(),
+            w_initializer = tf.contrib.layers.xavier_initializer(),
+            b_initializer = tf.constant_initializer(0.0),
             activation = tf.nn.relu,
+            bias_start
             name = 'linearfc'):
     shape = inp.get_shape().as_list()
+    
+    with tf.variable_scope(name):
+        w = tf.get_variable('w', [shape[1], output_size], tf.float32, w_initializer))
+        b = tf.get_variable('b', [output_dim], initializer = b_initializer)
 
-    with
+        out = tf.nn.bias_add(tf.matmul(inp, w), b)
+
+        if activation != None:
+            out = activation(out)
+
+    return out, w, b 
