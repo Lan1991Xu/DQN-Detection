@@ -5,7 +5,8 @@ def cov_layer(inp,
             output_dim,
             kernel_size,
             stride,
-            initializer = tf.contrib.layers.xavier_initializer(),
+            w_initializer = tf.contrib.layers.xavier_initializer(),
+            b_initializer = tf.constant_initializer(0.0),
             activation = tf.nn.relu,
             name = 'conv2d'
             data_format = 'NHWC'
@@ -14,9 +15,9 @@ def cov_layer(inp,
         stride = [1, stride[0], stride[1], 1]
         kernel_shape = [kernel_size[0], kernel_size[1], inp.get_shape()[-1], output_dim]
 
-        w = tf.get_variable('w', kernel_shape, tf.float32, initializer = initializer)
+        w = tf.get_variable('w', kernel_shape, tf.float32, initializer = w_initializer)
         conv = tf.nn.conv2d(x, w, stride, padding, data_format = data_format)   
-        b = tf.get_variable('biases', [output_dim], initializer = tf.constant_initializer(0.0))
+        b = tf.get_variable('biases', [output_dim], initializer = b_initializer)
         out = tf.nn.bias_add(conv, b, data_format)
 
     if activation != None:
@@ -28,7 +29,7 @@ def fc_layer(inp,
             output_dim,
             w_initializer = tf.contrib.layers.xavier_initializer(),
             b_initializer = tf.constant_initializer(0.0),
-            activation = tf.nn.relu,
+            activation = None,
             bias_start
             name = 'linearfc'):
     shape = inp.get_shape().as_list()
