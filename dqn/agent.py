@@ -14,7 +14,7 @@ class Agent(BaseModel):
         self.build_cnn_net(config, 't_')
         self.build_dqn_net(config, 'p_')
         self.build_dqn_net(config, 't_')
-        self.mem = memory()
+        self.mem = memory(config.batch_size)
         self.env = environment()
 
     def build_cnn_net(self, config, prefix):
@@ -134,23 +134,41 @@ class Agent(BaseModel):
                             staircase = True))
                 self.dqn_optim = tf.train.RMSPropOptimizer(self.learning_rate_op, momentum = config.dqn_momentum, epsilon = config.dqn_epsilon).minimize(self.loss)
 
-    def record(self):
-
     def train(self):
-        state = self.env.reset()   
-        self.mem.reset(capacity = self.mem_capacity)
-        
         # DQN initialization
         tf.initialize_all_variables().run()
         self.update_target_net()
-
-        for x in xrange(self.mem_capacity):
-            self.mem.add(state)
+        ep_rewards = []
 
         start_time = time.time()
 
-        for x in xrange(self.mx_step):
-             
+        for episode in xrange(config.epi_size):
+            # initialize the environment for each episode
+            state = self.env.reset()   
+            self.mem.reset(capacity = self.mem_capacity)
+            for x in xrange(self.mem_capacity):
+                self.mem.add(state)
+            
+            
+            for stp in xrange(config.max_step):
+                # predict
+                action = self.predict(env.state())
+                # act
+                nxt_state, reward, terminal = self.env.act(action)
+                # observe
+                self.observe(state, action, reward, nxt_state)
+
+                if terminal:
+                    state = self.env.reset()
+                    self.mem.reset(capacity = self.mem_capacity)
+
+
+            if episode % self.test_point == 0:
+                self.evaluation()
+
+    def predict(self, state):
 
     def evaluation(self):
+
+    def record(self):
 
