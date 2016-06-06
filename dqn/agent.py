@@ -32,14 +32,14 @@ class Agent(BaseModel):
         if target:
             scope_name = 't_CNN'
             cur_w = {}
-            cur_w = cur_w
+            cur_w = self.p_cnn_w 
             inp = self.t_inp
             out = self.t_cnn_out
         else:
             scope_name = 'p_CNN'
             self.t_cnn_w = {}
             cur_w = self.t_cnn_w
-            inp = p_inp
+            inp = self.p_inp
             out = self.p_cnn_out
 
         with tf.variable_scope(scope_name):
@@ -94,7 +94,7 @@ class Agent(BaseModel):
             name_scope = 'p_DQN'
             self.p_dqn_w = {}
             cur_w = self.p_dqn_w
-            inp = self.p_cnn_ou
+            inp = self.p_cnn_out
             out = self.p_q
 
 
@@ -106,9 +106,9 @@ class Agent(BaseModel):
             dqn_l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(dqn_l1, 1024, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
 
             # DQN_output
-            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(dqn_l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l3')
+            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(dqn_l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
             if not target:
-                self.q_action = tf.argmax(self.q, dimension = 1)
+                self.q_action = tf.argmax(self.q, dimension = 1, name = 'q_action')
 
         if not target:
             # optimizer
@@ -156,19 +156,33 @@ class Agent(BaseModel):
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # observe
-                self.observe(state, action, reward, nxt_state)
+                self.observe(state, action, reward, nxt_state, terminal)
 
                 if terminal:
                     state = self.env.reset()
                     self.mem.reset(capacity = self.mem_capacity)
 
-
             if episode % self.test_point == 0:
                 self.evaluation()
 
     def predict(self, state):
+        if random.random() < self.epsilon:
+            action = random.randrange(self.env.action_size)
+        else:
+            action = self.q_action.eval({self.p_inp : state})
+        return action
+
+    def observe(self, state, action, reward, nxt_state, terminal):
+        self.mem.add(state, action, reward, nxt_state, terminal)
+        # gradient descent
+        self.mini_batch_gradient_descent()
+        # update target net every C steps
+        if self.step % self.update_C:
+            self.update_target_net()
+
 
     def evaluation(self):
+        
 
     def record(self):
-
+        pass
