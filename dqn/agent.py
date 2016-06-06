@@ -3,27 +3,23 @@ import numpy as np
 import time
 
 from .ops import cov_layer, linear_layer
-from .memory import memory
-from .environtment import environment
+from .memory import Memory
+from .environtment import Environment, State
 
 class Agent(BaseModel):
-    def __init__(self,config):
+    def __init__(self, config, sess):
         super(Agent, self).__init__(config)
-        self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
         self.build_cnn_net(config, 'p_')
         self.build_cnn_net(config, 't_')
         self.build_dqn_net(config, 'p_')
         self.build_dqn_net(config, 't_')
-        self.mem = memory(config.batch_size)
-        self.env = environment()
+        self.mem = Memory(config.batch_size)
+        self.env = Environment(config)
+        self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
+        self.action_status = 0
+        self.sess = sess
 
     def build_cnn_net(self, config, prefix):
-        """Build the pre-CNN
-
-        Args:
-            config: the global configer which offers all of required configuration.
-        """
-        
         # initializer, rectifier and normalizer
         activation = tf.nn.relu
         w_initializer = tf.truncated_normal_initializer(config.ini_mean, config.ini_stddev)
@@ -71,12 +67,6 @@ class Agent(BaseModel):
 
 
     def build_dqn_net(self, config, target):
-        """Build the Deep-Q-Net
-
-        Args:
-            config: the global configer which offers all of required configuration.
-
-        """
         # initializer and rectifier
         activation = tf.nn.relu
         w_initializer = tf.truncated_normal_initializer(config.ini_mean, config.ini_stddev)
@@ -97,6 +87,7 @@ class Agent(BaseModel):
             inp = self.p_cnn_out
             out = self.p_q
 
+        inp = tf.concat(1, [inp, self.action_history], name = name_scope + '_concat')  
 
         with tf.variable_scope(name_scope):
             # DQN_fc1
@@ -108,7 +99,7 @@ class Agent(BaseModel):
             # DQN_output
             out, cur_w['output_w'], cur_w['output_b'] = fc_layer(dqn_l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
             if not target:
-                self.q_action = tf.argmax(self.q, dimension = 1, name = 'q_action')
+                self.q_action = tf.argmax(out, dimension = 1, name = 'q_action')
 
         if not target:
             # optimizer
@@ -138,21 +129,24 @@ class Agent(BaseModel):
         # DQN initialization
         tf.initialize_all_variables().run()
         self.update_target_net()
-        ep_rewards = []
+        self.ep_rewards = []
+        self.update_count = 0
+        self.mem.reset(capacity = self.mem_capacity)
+        self.env.clear()
 
         start_time = time.time()
 
         for episode in xrange(config.epi_size):
             # initialize the environment for each episode
             state = self.env.reset()   
-            self.mem.reset(capacity = self.mem_capacity)
+            state = State(state.img_id, state.height, state.width)
             for x in xrange(self.mem_capacity):
                 self.mem.add(state)
-            
+            self.action_status = 0
             
             for stp in xrange(config.max_step):
                 # predict
-                action = self.predict(env.state())
+                action = self.predict(env.state)
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # observe
@@ -160,7 +154,10 @@ class Agent(BaseModel):
 
                 if terminal:
                     state = self.env.reset()
-                    self.mem.reset(capacity = self.mem_capacity)
+                    self.action_status = 0
+                else:
+                    state = nxt_state.copy()
+                    self.action_status |= 1 << action
 
             if episode % self.test_point == 0:
                 self.evaluation()
@@ -169,20 +166,57 @@ class Agent(BaseModel):
         if random.random() < self.epsilon:
             action = random.randrange(self.env.action_size)
         else:
-            action = self.q_action.eval({self.p_inp : state})
+            action = self.q_action.eval({self.p_inp : self.crop(state), self.action_history : self.actionArray(1)})
         return action
 
     def observe(self, state, action, reward, nxt_state, terminal):
+        # clip reward
+        reward = max(self.min_reward, min(self.max_reward, reward)) 
+
         self.mem.add(state, action, reward, nxt_state, terminal)
+        if self.step < self.learning_start_point:
+            return
+
         # gradient descent
         self.mini_batch_gradient_descent()
         # update target net every C steps
         if self.step % self.update_C:
             self.update_target_net()
 
+    def mini_batch_gradient_descent(self):
+        if self.mem.count < self.batch_size:
+            return
+
+        s, action, reward, s_nxt, terminal = self.mem.sample(self.batch_Size)
+
+        q_nxt = self.t_q.eval({self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size)})
+        
+        terminal = np.array(terminal) + 0.
+        max_q_nxt = np.max(q_nxt, axis = 1)
+        ground_truth = (1. - terminal) * config.discont * max_q_nxt + reward
+
+        _, q_t, loss = self.sess.run([self.dqn_optim, self.p_q, self.loss]){
+                self.dqn_gt_q : ground_truth,
+                self.action : action,
+                self.p_inp : self.crop(s),
+                self.dqn_learning_rate_step: self.step
+                self.action_history: self.actionArray(self.batch_size)
+                }
+
+        self.update_count += 1
+
+    def actionArray(self, sz):
+        arr = np.zeros([sz, self.action_size], dtype = bool)
+        act1d = np.empty([self.action_size], dtype = bool)
+        for x in xrange(self.action_size):
+            if (self.action_status >> x) & 1 == 1:
+                act1d[x] = True
+            else:
+                act1d[x] = False
+        return arr + act1d
 
     def evaluation(self):
-        
+        pass 
 
     def record(self):
         pass
