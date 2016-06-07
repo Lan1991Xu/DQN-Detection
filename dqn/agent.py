@@ -13,7 +13,7 @@ class Agent(BaseModel):
         self.build_cnn_net(config, 't_')
         self.build_dqn_net(config, 'p_')
         self.build_dqn_net(config, 't_')
-        self.mem = Memory(config.batch_size)
+        self.mem = Memory(config.mem_capacity)
         self.env = Environment(config)
         self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
         self.action_status = 0
@@ -131,7 +131,7 @@ class Agent(BaseModel):
         self.update_target_net()
         self.ep_rewards = []
         self.update_count = 0
-        self.mem.reset(capacity = self.mem_capacity)
+        self.mem.reset()
         self.env.clear()
 
         start_time = time.time()
