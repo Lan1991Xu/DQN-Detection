@@ -3,7 +3,6 @@ import numpy as np
 import os
 
 from .dataset import Dataset
-from .memory import Memory
 
 class State(object):
     def __init__(self, img, height, width)
@@ -122,6 +121,8 @@ class Env(object):
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.ground_truth = self.data.get_data('test_ano', self.cur_img)
             self.cur_img += 1
+
+        return self.state
 
     def _sign(self, x):
         return 1 if x >= self.eps else -1

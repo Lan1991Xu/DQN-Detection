@@ -79,13 +79,12 @@ class Agent(BaseModel):
             out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l5_flat, 4096, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'output')
 
         if target:
-            with tf.variable_scope('cnn_transfer'):
+            with tf.variable_scope('cnn_trans'):
                 self.cnn_assign_inp = {}
                 self.cnn_assign_op = {}
 
                 for key in self.p_cnn_w.keys():
-                    self.cnn_assign_inp[key] = tf.placeholder('float32', self.p_cnn_w[key].get_shape().as_list(), name = key)
-                    self.cnn_assign_op[key] = self.t_cnn_w[key].assign(self.cnn_assign_inp[key])
+                    self.cnn_assign_inp = tf.placeholder('float32', self.p_cnn_w[key].get_shape().as_list(), name = ,key)
 
 
     def build_dqn_net(self, config, target):
@@ -151,14 +150,6 @@ class Agent(BaseModel):
                             self.dqn_learning_rate_decay,
                             staircase = True))
                 self.dqn_optim = tf.train.RMSPropOptimizer(self.learning_rate_op, momentum = config.dqn_momentum, epsilon = config.dqn_epsilon).minimize(self.dqn_loss)
-        else:
-            with tf.variable_scope('dqn_transfer'):
-                self.dqn_assign_inp = {}
-                self.dqn_assign_op = {}
-
-                for key in self.p_dqn_w.keys():
-                    self.dqn_assign_inp[key] = tf.placeholder('float32', self.p_dqn_w[key].get_shape().as_list(), name = key)
-                    self.dqn_assign_op[key] = self.t_dqn_w[key].assign(self.dqn_assign_inp[key])
 
     def train(self):
         # DQN initialization

@@ -16,7 +16,7 @@ def cov_layer(inp,
         kernel_shape = [kernel_size[0], kernel_size[1], inp.get_shape()[-1], output_dim]
 
         w = tf.get_variable('w', kernel_shape, tf.float32, initializer = w_initializer)
-        conv = tf.nn.conv2d(x, w, stride, padding, data_format = data_format)   
+        conv = tf.nn.conv2d(inp, w, stride, padding, data_format = data_format)   
         b = tf.get_variable('biases', [output_dim], initializer = b_initializer)
         out = tf.nn.bias_add(conv, b, data_format)
 
@@ -35,7 +35,7 @@ def fc_layer(inp,
     shape = inp.get_shape().as_list()
     
     with tf.variable_scope(name):
-        w = tf.get_variable('w', [shape[1], output_size], tf.float32, w_initializer))
+        w = tf.get_variable('w', [shape[1], output_dim], tf.float32, w_initializer))
         b = tf.get_variable('b', [output_dim], initializer = b_initializer)
 
         out = tf.nn.bias_add(tf.matmul(inp, w), b)
