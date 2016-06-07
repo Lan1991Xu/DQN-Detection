@@ -11,8 +11,8 @@ class Pool(object):
         self.size = size
         self.img_files = np.array(img_files)
         self.ano_files = np.array(ano_files)
-        self.data = np.empty(size, dtype = ndarray) 
-        self.gt = np.empty(size, dtype = ndarray)
+        self.data = np.empty(size, dtype = np.ndarray) 
+        self.gt = np.empty(size, dtype = np.ndarray)
         self.pos = np.zeros(size, dtype = int)
         self.ids = np.zeros(size, dtype = int)
         self.ids -= 1
@@ -32,17 +32,18 @@ class Pool(object):
         return self.gt[idx], self.data[idx]
 
 class Dataset(object):
-    def __init__(self, train_dir, train_ano_dir, test_dir, test_ano_dir, pool_size):
+    def __init__(self, train_dir, train_ano_dir, test_dir = None, test_ano_dir = None, pool_size = 1000):
         self.tr_dir = train_dir
         self.tr_ano_dir = train_ano_dir
-        self.te_dir = test_te_dir
+        self.te_dir = test_dir
         self.te_ano_dir = test_ano_dir
         self.pool_size = pool_size
 
         self.data = {}
 
-        self._scan_dir('train', self.tr_dir, tr_ano_dir)
-        self._scan_dir('test', self.te_dir, self.te_ano_dir)
+        self._scan_dir('train', self.tr_dir, self.tr_ano_dir)
+        if self.te_dir != None:
+            self._scan_dir('test', self.te_dir, self.te_ano_dir)
 
     # self_scan
     def _scan_dir(self, name, img_path, ano_path):
@@ -53,9 +54,6 @@ class Dataset(object):
             ano_files = dir_files
 
         self.data[name] = Pool(img_files, ano_files, self.pool_size)
-
-
-        self.data[name] = Pool(files, self.pool_size)
 
     def get_data(name, idx):
         return self.data[name].query(idx)

@@ -16,7 +16,7 @@ class Agent(BaseModel):
 
         """
         super(Agent, self).__init__(config)
-        self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
+        self.action_history = tf.placeholder('float32', [None, config.action_size], 'action_history')
         self.build_cnn_net(config, False)
         self.build_cnn_net(config, True)
         self.build_dqn_net(config, False)
@@ -115,15 +115,11 @@ class Agent(BaseModel):
             self.t_dqn_w = {}
             cur_w = self.t_dqn_w
             inp = self.t_cnn_out
-            self.t_q = None
-            out = self.t_q
         else:
             name_scope = 'p_DQN'
             self.p_dqn_w = {}
             cur_w = self.p_dqn_w
             inp = self.p_cnn_out
-            self.p_q = None
-            out = self.p_q
 
         inp = tf.concat(1, [inp, self.action_history], name = name_scope + '_concat')  
 
@@ -135,7 +131,13 @@ class Agent(BaseModel):
             l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(l1, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
 
             # DQN_output
-            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(dqn_l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
+            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
+        
+            if target:
+                self.t_q = out
+            else:
+                self.p_q = out
+
             if not target:
                 self.q_action = tf.argmax(out, dimension = 1, name = 'q_action')
 
@@ -149,19 +151,19 @@ class Agent(BaseModel):
                 q_acted = tf.reduce_sum(self.p_q * action_one_hot, reduction_indices = 1, name = 'q_acted')
 
                 self.dqn_delta = self.dqn_gt_q - q_acted
-                self.clipped_delta = tf.clip_by_value(self.delta, self.min_delta, self.max_delta, name = 'clipped_delta')
+                self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
                 # self.global_step = tf.Varialbe(0, trainable = False)
 
                 self.dqn_loss = tf.reduce_mean(tf.square(self.clipped_delta), name = 'dqn_loss')
                 self.dqn_learning_rate_step = tf.placeholder('int64', None, name = 'learning_rate_step')
                 self.dqn_learning_rate_op = tf.maximum(self.learning_rate_minimum,
                         tf.train.exponential_decay(
-                            self.dqn_learning_rate_op,
+                            self.dqn_learning_rate,
                             self.dqn_learning_rate_step,
                             self.dqn_learning_rate_decay_step,
                             self.dqn_learning_rate_decay,
                             staircase = True))
-                self.dqn_optim = tf.train.RMSPropOptimizer(self.learning_rate_op, momentum = config.dqn_momentum, epsilon = config.dqn_epsilon).minimize(self.dqn_loss)
+                self.dqn_optim = tf.train.RMSPropOptimizer(self.dqn_learning_rate_op, momentum = config.dqn_momentum, epsilon = config.dqn_epsilon).minimize(self.dqn_loss)
         else:
             with tf.variable_scope('dqn_transfer'):
                 self.dqn_assign_inp = {}
@@ -255,13 +257,13 @@ class Agent(BaseModel):
         self.update_count += 1
 
     def actionArray(self, sz):
-        arr = np.zeros([sz, self.action_size], dtype = bool)
-        act1d = np.empty([self.action_size], dtype = bool)
+        arr = np.zeros([sz, self.action_size], dtype = float)
+        act1d = np.empty([self.action_size], dtype = float)
         for x in xrange(self.action_size):
             if (self.action_status >> x) & 1 == 1:
-                act1d[x] = True
+                act1d[x] = 1.0
             else:
-                act1d[x] = False
+                act1d[x] = 0.0 
         return arr + act1d
 
     def update_target_net(self):

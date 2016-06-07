@@ -10,7 +10,7 @@ class Memory(object):
         self.act = np.empty(mem_size, dtype = int)
         self.rwd = np.empty(mem_size, dtype = int)
         self.s_nxt = np.empty(mem_size, dtype = State)
-        self.term = np.empty(mem_Size, dtype = bool)
+        self.term = np.empty(mem_size, dtype = bool)
         self.reset()
 
     def reset(self):

@@ -20,9 +20,8 @@ class State(object):
 
 class Environment(object):
     def __init__(self, config):
-        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.data_pool_size)
+        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.pool_size)
         self.cur_img = 0
-        self.train_set_size = self.train_size
         self.alpha = config.alpha 
         self.state = None
         self.action_size = 8
