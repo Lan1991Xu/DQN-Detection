@@ -50,7 +50,7 @@ class Env(object):
             return False
         return True
     def _calc_IoU(self):
-        gt = self.data.ground_truth[cur_img]
+        gt = self.ground_truth
         box = self.state.box
         if self._isIntersect(box, gt):
             inter = [max(box[0], gt[0]), max(box[1], gt[1]), min(box[2], gt[2]), min(box[3], gt[3])]
@@ -115,12 +115,14 @@ class Env(object):
         self.cur_img = 0
     def reset(self, isTrain = True):
         if isTrain:
-            self.state = State(self.cur_img, self.data.train_img[self.cur_img].shape[0], self.data.train_img[self.cur_img].shape[1])
-            self.ground_truth = self.data.train_img_ano[self.cur_img]
+            pic = self.data.get_data('train_img', self.cur_img)
+            self.state = State(self.cur_img, pic.shape[0], pic.shape[1])
+            self.ground_truth = self.data.get_data('train_ano', self.cur_img)
             self.cur_img = (self.cur_img + 1) % self.train_size
         else:
-            self.state = State(self.cur_img, self.data.test_img[self.cur_img].shape[0], self.data.test_img[self.cur_img].shape[1])
-            self.ground_truth = self.data.test_img_ano[self.cur_img]
+            pic = self.data.get_data('test_img', self.cur_img)
+            self.state = State(self.cur_img, pic.shape[0], pic.shape[1])
+            self.ground_truth = self.data.get_data('test_ano', self.cur_img)
             self.cur_img += 1
 
     def _sign(self, x):

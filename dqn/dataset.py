@@ -5,6 +5,7 @@ import sys
 
 from scipy import misc
 
+# needed train_img, train_  
 class Dataset(object):
     def __init__(self, train_dir, train_ano_dir, test_dir, test_ano_dir, pool_size):
         self.tr_dir = train_dir
@@ -13,16 +14,15 @@ class Dataset(object):
         self.te_ano_dir = test_ano_dir
         self.pool_size = pool_size
 
-        self.tr_idx = {}
-        self.tr_ano_idx = {}
-        self.te_idx = {}
-        self.te_ano_idx = {}
+        self.data = {}
 
-        self.full = False
+        self.data['train_img'] = Pool()
+        self.data['train_ano'] = Pool()
+        self.data['test_img'] = Pool()
+        self.data['test_ano'] = Pool()
 
-        self.tr = 
-        
     # self_scan
-    def _scan_dir(self, path, idx_dic):
+    def _scan_dir(self, path, pl):
         
 
+    def get_data(name, idx):
