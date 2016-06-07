@@ -41,5 +41,3 @@ class Memory(object):
         idx = np.random.randint(0, self.count, batch_size)
         idx = (idx + self.mem_start) % self.mem_size
         return self.s[idx], self.act[idx], self.rew[idx], self.nxt[idx], self.term[idx]
-
-

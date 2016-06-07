@@ -61,4 +61,3 @@ class BaseModel(object):
         if self._saver == None:
             self._saver = tf.train.Saver(max_to_keep=10)
         return self._saver
-

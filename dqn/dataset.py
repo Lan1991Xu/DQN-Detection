@@ -4,14 +4,17 @@ import os
 import sys
 
 from scipy import misc
+from .utils import readXML
 
 class Pool(object):
-    def __init__(self, files, size):
+    def __init__(self, img_files, ano_files, size):
         self.size = size
-        self.files = np.array(files)
+        self.img_files = np.array(img_files)
+        self.ano_files = np.array(ano_files)
         self.data = np.empty(size, dtype = ndarray) 
-        self.pos = np.zero(size, dtype = int)
-        self.ids = np.zero(size, dtype = int)
+        self.gt = np.empty(size, dtype = ndarray)
+        self.pos = np.zeros(size, dtype = int)
+        self.ids = np.zeros(size, dtype = int)
         self.ids -= 1
         self.pos -= 1
         self.data_start = 0
@@ -23,9 +26,10 @@ class Pool(object):
                 self.pos[kick] = -1
             self.ids[self.data_start] = idx
             self.pos[idx] = self.data_start
-            self.data[self.data_start] = misc.imread(self.files[idx])
+            self.data[self.data_start] = misc.imread(self.img_files[idx])
+            self.gt[self.data_start] = readXML(self.ano_files[idx]) 
             self.data_start = (self.data_start + 1) % self.size
-        return self.data[idx]
+        return self.gt[idx], self.data[idx]
 
 class Dataset(object):
     def __init__(self, train_dir, train_ano_dir, test_dir, test_ano_dir, pool_size):
@@ -37,17 +41,20 @@ class Dataset(object):
 
         self.data = {}
 
-        self._scan_dir('train_img', self.tr_dir)
-        self._scan_dir('train_ano', self.tr_ano_dir)
-        self._scan_dir('test_img', self.te_dir)
-        self._scan_dir('test_ano', self.te_ano_dir)
+        self._scan_dir('train', self.tr_dir, tr_ano_dir)
+        self._scan_dir('test', self.te_dir, self.te_ano_dir)
 
     # self_scan
-    def _scan_dir(self, name, path):
-        files = []
-        for dir_path, _, dir_files in os.walk(path):
-            for f in dir_files:
-                files.append(dir_path + f)
+    def _scan_dir(self, name, img_path, ano_path):
+        for dir_path, _, dir_files in os.walk(img_path):
+            img_files = dir_files
+
+        for dir_path, _, dir_files in os.walk(ano_path):
+            ano_files = dir_files
+
+        self.data[name] = Pool(img_files, ano_files, self.pool_size)
+
+
         self.data[name] = Pool(files, self.pool_size)
 
     def get_data(name, idx):
