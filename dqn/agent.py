@@ -5,6 +5,7 @@ import time
 from .ops import cov_layer, linear_layer
 from .memory import Memory
 from .environtment import Environment, State
+from config import Config
 
 class Agent(BaseModel):
     def __init__(self, config, sess):
@@ -182,6 +183,7 @@ class Agent(BaseModel):
             self.action_status = 0
             
             for stp in xrange(self.step_size):
+                self.step += 1
                 # predict
                 action = self.predict(env.state)
                 # act
@@ -196,7 +198,7 @@ class Agent(BaseModel):
                     state = nxt_state.copy()
                     self.action_status |= 1 << action
 
-            if episode % self.test_point == 0:
+            if episode % self.check_point == 0:
                 self.evaluation()
 
     def predict(self, state):

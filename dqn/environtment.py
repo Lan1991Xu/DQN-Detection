@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 from .dataset import Dataset
+from config import Config
 
 class State(object):
     def __init__(self, img, height, width)

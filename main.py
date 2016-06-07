@@ -1,14 +1,12 @@
 import tensorflow as tf
 
 from dqn.agent import Agent
-from config import config_all
-
-flags = tf.app.flags
+from config import Config
 
 def main(args):
 
     tf.Session() as sess:
-        config = config_all(flags) 
+        config = Config() 
         player = Agent(config, sess)
 
     if flags.train:

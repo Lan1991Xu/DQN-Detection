@@ -2,6 +2,8 @@ import os
 import inspect
 import tensorflow as tf
 
+from config import Config
+
 def class_vars(obj):
     return {k:v for k, v in inspect.getmembers(obj) if not k.startswith('__') and not callable(k)}
 
