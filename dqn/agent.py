@@ -2,9 +2,10 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from .ops import cov_layer, linear_layer
+from .ops import cov_layer, fc_layer
 from .memory import Memory
 from .environtment import Environment, State
+from .base import BaseModel
 from config import Config
 
 class Agent(BaseModel):
@@ -15,17 +16,17 @@ class Agent(BaseModel):
 
         """
         super(Agent, self).__init__(config)
-        self.build_cnn_net(config, 'p_')
-        self.build_cnn_net(config, 't_')
-        self.build_dqn_net(config, 'p_')
-        self.build_dqn_net(config, 't_')
+        self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
+        self.build_cnn_net(config, False)
+        self.build_cnn_net(config, True)
+        self.build_dqn_net(config, False)
+        self.build_dqn_net(config, True)
         self.mem = Memory(config.mem_capacity)
         self.env = Environment(config)
-        self.action_history = tf.placeholder('bool', [None, config.action_size], 'action_history')
         self.action_status = 0
         self.sess = sess
 
-    def build_cnn_net(self, config, prefix):
+    def build_cnn_net(self, config, target):
         """build cnn_net part
 
         build the 5 conv layers cnn to extract features.
@@ -38,30 +39,31 @@ class Agent(BaseModel):
 
         if target:
             scope_name = 't_CNN'
-            self.p_cnn_w = {}
-            cur_w = self.p_cnn_w 
+            self.t_cnn_w = {}
+            cur_w = self.t_cnn_w 
+            self.t_inp = tf.placeholder('float32', [None, None, None, 3], name =  't_inp')
             inp = self.t_inp
-            out = self.t_cnn_out
         else:
             scope_name = 'p_CNN'
-            self.t_cnn_w = {}
-            cur_w = self.t_cnn_w
+            self.p_cnn_w = {}
+            cur_w = self.p_cnn_w
+            self.p_inp = tf.placeholder('float32', [None, None, None, 3], name = 'p_inp')
             inp = self.p_inp
-            out = self.p_cnn_out
 
-        # resize the image
-        inp = tf.image.resize_image_with_crop_or_pad(inp, 224, 224)
+        # # resize the image
+        # for scr in inp[:]:
+        #     scr = tf.image.resize_image_with_crop_or_pad(scr, 224, 224)
 
         with tf.variable_scope(scope_name):
             # Input_Holder
-            inp = tf.placeholder(config.imgDType, [None, 224, 224, 3], 'ZFNet_input')
+            inp = tf.placeholder('float32', [None, 224, 224, 3], 'ZFNet_input')
             # CNN_l1(including pooling and normlization)
             l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv1')
-            pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], stride = [1, 2, 2, 1], padding = 'SAME', name = 'pool1')
+            pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool1')
 
             # CNN_l2(including pooling and normlization)
             l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv2')
-            pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], stride = [1, 2, 2, 1], padding = 'SAME', name = 'pool2')
+            pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool2')
             
             # CNN_l3
             l3, cur_w['l3_w'], cur_w['l3_b'] = cov_layer(pool2, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv3')
@@ -71,13 +73,19 @@ class Agent(BaseModel):
 
             # CNN_l5
             l5, cur_w['l5_w'], cur_w['l5_b'] = cov_layer(l4, 256, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv5')
-            pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], stride = [1, 2, 2, 1], padding = 'SAME', name = 'pool5')
+            pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool5')
 
             # CNN_l5 reshape
-            l5_flat = tf.reshape(pool5, [config.batch_size, -1], name = 'l5_flat')
+            shape = l5.get_shape().as_list()
+            l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
             
             # CNN_output
             out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l5_flat, 4096, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'output')
+
+            if target:
+                self.t_cnn_out = out
+            else:
+                self.p_cnn_out = out
 
         if target:
             with tf.variable_scope('cnn_transfer'):
@@ -98,21 +106,23 @@ class Agent(BaseModel):
         # initializer and rectifier
         activation = tf.nn.relu
         w_initializer = tf.truncated_normal_initializer(config.ini_mean, config.ini_stddev)
-        b_initializer = tf.constant_initializer(config.bias_start)
+        b_initializer = tf.constant_initializer(config.bias_starter)
 
-        inp_size = config.featureDimension + config.actionDimension
+        # inp_size = config.featureDimension + config.actionDimension
         
         if target:
             name_scope = 't_DQN'
             self.t_dqn_w = {}
             cur_w = self.t_dqn_w
             inp = self.t_cnn_out
+            self.t_q = None
             out = self.t_q
         else:
             name_scope = 'p_DQN'
             self.p_dqn_w = {}
             cur_w = self.p_dqn_w
             inp = self.p_cnn_out
+            self.p_q = None
             out = self.p_q
 
         inp = tf.concat(1, [inp, self.action_history], name = name_scope + '_concat')  
@@ -270,7 +280,8 @@ class Agent(BaseModel):
             left = s.box[1]
             down = s.box[2]
             right = s.box[3]
-            cropped[cnt] = img[up - 1 : down, left - 1 : right, :]
+            cropped[cnt] = tf.constant_variable(img[up - 1 : down, left - 1 : right, :])
+            cropped[cnt] = tf.image.resize_image_with_crop_or_pad(cropped[cnt], 224, 224)
             cnt += 1
 
         return cropped

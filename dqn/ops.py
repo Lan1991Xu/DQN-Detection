@@ -8,8 +8,8 @@ def cov_layer(inp,
             w_initializer = tf.contrib.layers.xavier_initializer(),
             b_initializer = tf.constant_initializer(0.0),
             activation = tf.nn.relu,
-            name = 'conv2d'
-            data_format = 'NHWC'
+            name = 'conv2d',
+            data_format = 'NHWC',
             padding = 'SAME'):
     with tf.variable_scope(name):
         stride = [1, stride[0], stride[1], 1]
@@ -30,12 +30,11 @@ def fc_layer(inp,
             w_initializer = tf.contrib.layers.xavier_initializer(),
             b_initializer = tf.constant_initializer(0.0),
             activation = None,
-            bias_start
             name = 'linearfc'):
-    shape = inp.get_shape().as_list()
+    shape = inp.get_shape()[1].value
     
     with tf.variable_scope(name):
-        w = tf.get_variable('w', [shape[1], output_dim], tf.float32, w_initializer))
+        w = tf.get_variable('w', [shape, output_dim], tf.float32, w_initializer)
         b = tf.get_variable('b', [output_dim], initializer = b_initializer)
 
         out = tf.nn.bias_add(tf.matmul(inp, w), b)

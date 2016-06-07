@@ -5,9 +5,12 @@ from config import Config
 
 def main(args):
 
-    tf.Session() as sess:
+    with tf.Session() as sess:
         config = Config() 
         player = Agent(config, sess)
+        # A command for Debug
+        exit()
+        #
 
     if flags.train:
         player.train()

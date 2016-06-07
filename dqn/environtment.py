@@ -6,7 +6,7 @@ from .dataset import Dataset
 from config import Config
 
 class State(object):
-    def __init__(self, img, height, width)
+    def __init__(self, img, height, width):
         self.img = img
         self.height, self.width = width 
         # box = [top, left, down, right]
@@ -18,9 +18,9 @@ class State(object):
         self.box[2] = min(self.box[2], self.height)
         self.box[3] = min(self.box[3], self.width)
 
-class Env(object):
+class Environment(object):
     def __init__(self, config):
-        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.data_pool_size):
+        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.data_pool_size)
         self.cur_img = 0
         self.train_set_size = self.train_size
         self.alpha = config.alpha 

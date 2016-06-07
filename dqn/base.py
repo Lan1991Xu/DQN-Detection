@@ -9,7 +9,7 @@ def class_vars(obj):
 
 class BaseModel(object):
     def __init__(self,config):
-        self.saver = None
+        self._saver = None
         self.config = config
 
         try:
