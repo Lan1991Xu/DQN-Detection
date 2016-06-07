@@ -215,6 +215,21 @@ class Agent(BaseModel):
                 act1d[x] = False
         return arr + act1d
 
+    def crop(self, states):
+        cropped = np.empty(s.shape[0], dtype = ndarray)
+        cnt = 0
+
+        for s in states:
+            img = s.img
+            up = s.box[0]
+            left = s.box[1]
+            down = s.box[2]
+            right = s.box[3]
+            cropped[cnt] = img[up - 1 : down, left - 1 : right, :]
+            cnt += 1
+
+        return cropped
+
     def evaluation(self):
         pass 
 

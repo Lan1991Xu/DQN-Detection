@@ -6,19 +6,17 @@ from .dataset import Dataset
 from .memory import Memory
 
 class State(object):
-    def __init__(self, img_id, height, width):
-        self.img_id = img_id
+    def __init__(self, img, height, width)
+        self.img = img
         self.height, self.width = width 
-        # box = [left, top, right, down]
+        # box = [top, left, down, right]
         self.box = [1, 1, self.height, self.width]  
 
     def clip_box(self):
         self.box[0] = max(self.box[0], 1)
         self.box[1] = max(self.box[1], 1)
-        self.box[2] = min(self.box[2], self.width)
-        self.box[3] = min(self.box[3], self.height)
-
-        self.img_id = val.img_id
+        self.box[2] = min(self.box[2], self.height)
+        self.box[3] = min(self.box[3], self.width)
 
 class Env(object):
     def __init__(self, config):
@@ -71,17 +69,17 @@ class Env(object):
         self.move['7'] = self.taller
 
     def move_left(self):
-        self.state.box[0] -= self.alpha
-        self.state.box[2] -= self.alpha
-    def move_right(self):
-        self.state.box[0] += self.alpha
-        self.state.box[2] += self.alpha
-    def move_up(self):
         self.state.box[1] -= self.alpha
         self.state.box[3] -= self.alpha
-    def move_down(self):
+    def move_right(self):
         self.state.box[1] += self.alpha
         self.state.box[3] += self.alpha
+    def move_up(self):
+        self.state.box[0] -= self.alpha
+        self.state.box[2] -= self.alpha
+    def move_down(self):
+        self.state.box[0] += self.alpha
+        self.state.box[2] += self.alpha
     def bigger(self):
         delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
         delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
@@ -101,27 +99,27 @@ class Env(object):
         self.state.box[1] += delta_y
         self.state.box[3] -= delta_y
     def fatter(self):
-        delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
-        delta_y = int(delta_y)
-        self.state.box[1] += delta_y
-        self.state.box[3] -= delta_y
-    def taller(self):
         delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
         delta_x = int(delta_x)
         self.state.box[0] += delta_x
         self.state.box[2] -= delta_x
+    def taller(self):
+        delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
+        delta_y = int(delta_y)
+        self.state.box[1] += delta_y
+        self.state.box[3] -= delta_y
 
     def clear(self):
         self.cur_img = 0
     def reset(self, isTrain = True):
         if isTrain:
             pic = self.data.get_data('train_img', self.cur_img)
-            self.state = State(self.cur_img, pic.shape[0], pic.shape[1])
+            self.state = State(pic, pic.shape[0], pic.shape[1])
             self.ground_truth = self.data.get_data('train_ano', self.cur_img)
             self.cur_img = (self.cur_img + 1) % self.train_size
         else:
             pic = self.data.get_data('test_img', self.cur_img)
-            self.state = State(self.cur_img, pic.shape[0], pic.shape[1])
+            self.state = State(pic, pic.shape[0], pic.shape[1])
             self.ground_truth = self.data.get_data('test_ano', self.cur_img)
             self.cur_img += 1
 
@@ -136,5 +134,4 @@ class Env(object):
     def act(self, action):
         pre_IoU = self.state.IoU
         self._act(action)
-        self.
         return self.state, self._sign(self.IoU - pre_IoU), _isTerminal()
