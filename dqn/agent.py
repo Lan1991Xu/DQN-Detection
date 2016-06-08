@@ -175,16 +175,13 @@ class Agent(BaseModel):
 
     def train(self):
         # DQN initialization
-        tf.initialize_all_variables().run()
+        self.sess.run(tf.initialize_all_variables())
         self.update_target_net()
         self.ep_rewards = []
         self.update_count = 0
         self.mem.reset()
         self.env.clear()
         self.step = 0
-
-        # timer
-        start_time = time.time()
 
         for episode in xrange(self.epi_size):
             # initialize the environment for each episode
@@ -198,10 +195,19 @@ class Agent(BaseModel):
                 self.step += 1
                 # predict
                 action = self.predict(env.state)
+                # Debug
+                print "Done prediction: Ep %d, Step %d" % (episode, stp)
+                #
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
+                # Debug
+                print "Done action: Ep %d, Step %d" % (episode, stp)
+                #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal)
+                # Debug
+                print "Done observe: Ep %d, Step %d" % (episode, stp)
+                #
 
                 if terminal:
                     state = self.env.reset()
@@ -209,6 +215,9 @@ class Agent(BaseModel):
                 else:
                     state = nxt_state.copy()
                     self.action_status |= 1 << action
+
+                # info
+                print "Trained on episode %d, step %d" % (episode, stp)
 
             if episode % self.check_point == 0:
                 self.evaluation()
@@ -268,9 +277,9 @@ class Agent(BaseModel):
 
     def update_target_net(self):
         for key in self.p_cnn_w.keys():
-            self.sess.run(self.cnn_assign_op[key], {self.cnn_assign_inp[key] : self.p_cnn_w[key]})
+            self.sess.run(self.cnn_assign_op[key], {self.cnn_assign_inp[key] : self.sess.run(self.p_cnn_w[key])})
         for key in self.p_dqn_w.keys():
-            self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.p_dqn_w[key]})
+            self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.sess.run(self.p_dqn_w[key])})
 
     def crop(self, states):
         cropped = np.empty(s.shape[0], dtype = ndarray)

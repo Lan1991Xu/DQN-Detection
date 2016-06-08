@@ -7,6 +7,7 @@ class Config(object):
         self.action_size = 8
         self.alpha = 0.5 
         self.eps = 1e-9
+        self.isTrain = True
 
         # Network Settings
         self.ini_mean = 0.0

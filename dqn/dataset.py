@@ -20,7 +20,8 @@ class Pool(object):
         self.data_start = 0
 
     def query(self, idx):
-        if self.pos[idx] != -1:
+        p = self.pos[idx]
+        if p != -1:
             if self.ids[self.data_start] != -1:
                 kick = self.ids[self.data_start]
                 self.pos[kick] = -1
@@ -28,8 +29,9 @@ class Pool(object):
             self.pos[idx] = self.data_start
             self.data[self.data_start] = misc.imread(self.img_files[idx])
             self.gt[self.data_start] = readXML(self.ano_files[idx]) 
+            p = self.data_start
             self.data_start = (self.data_start + 1) % self.size
-        return self.gt[idx], self.data[idx]
+        return self.gt[p], self.data[p]
 
 class Dataset(object):
     def __init__(self, train_dir, train_ano_dir, test_dir = None, test_ano_dir = None, pool_size = 1000):
@@ -55,5 +57,5 @@ class Dataset(object):
 
         self.data[name] = Pool(img_files, ano_files, self.pool_size)
 
-    def get_data(name, idx):
+    def get_data(self, name, idx):
         return self.data[name].query(idx)

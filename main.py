@@ -8,11 +8,8 @@ def main(args):
     with tf.Session() as sess:
         config = Config() 
         player = Agent(config, sess)
-        # A command for Debug
-        exit()
-        #
 
-    if flags.train:
+    if config.isTrain:
         player.train()
     else:
         pass
