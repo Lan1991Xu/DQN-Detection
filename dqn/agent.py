@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import time
+import random
 
 from .ops import cov_layer, fc_layer
 from .memory import Memory
@@ -41,13 +42,13 @@ class Agent(BaseModel):
             scope_name = 't_CNN'
             self.t_cnn_w = {}
             cur_w = self.t_cnn_w 
-            self.t_inp = tf.placeholder('float32', [None, None, None, 3], name =  't_inp')
+            self.t_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 't_inp')
             inp = self.t_inp
         else:
             scope_name = 'p_CNN'
             self.p_cnn_w = {}
             cur_w = self.p_cnn_w
-            self.p_inp = tf.placeholder('float32', [None, None, None, 3], name = 'p_inp')
+            self.p_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 'p_inp')
             inp = self.p_inp
 
         # # resize the image
@@ -55,11 +56,15 @@ class Agent(BaseModel):
         #     scr = tf.image.resize_image_with_crop_or_pad(scr, 224, 224)
 
         with tf.variable_scope(scope_name):
-            # Input_Holder
-            inp = tf.placeholder('float32', [None, 224, 224, 3], 'ZFNet_input')
             # CNN_l1(including pooling and normlization)
             l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv1')
+            ## Debug
+            #print "l1 = ", l1.get_shape().as_list()
+            ##
             pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool1')
+            ## Debug
+            #print "pool1 = ", pool1.get_shape().as_list()
+            ##
 
             # CNN_l2(including pooling and normlization)
             l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv2')
@@ -76,7 +81,7 @@ class Agent(BaseModel):
             pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool5')
 
             # CNN_l5 reshape
-            shape = l5.get_shape().as_list()
+            shape = pool5.get_shape().as_list()
             l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
             
             # CNN_output
@@ -175,13 +180,33 @@ class Agent(BaseModel):
 
     def train(self):
         # DQN initialization
-        # self.sess.run(tf.initialize_all_variables())
+        
+        # timer
+        st = time.time()
+
+        self.sess.run(tf.initialize_all_variables())
+        # timer
+        print "Spent %.4fsecs initializing..." % (time.time() - st)
+        st = time.time()
+        #
         # self.update_target_net()
-        # self.ep_rewards = []
-        # self.update_count = 0
+        # timer
+        print "Spent %.4fsecs assigning..." % (time.time() - st)
+        st = time.time()
+        #
+        self.ep_rewards = []
+        self.update_count = 0
         self.mem.reset()
+        # timer
+        print "Spent %.4fsecs resetting..." % (time.time() - st)
+        st = time.time()
+        #
         self.env.clear()
         self.step = 0
+
+        # timer
+        print "Spent %.4fsecs initializing..." % (time.time() - st)
+        #
 
         for episode in xrange(self.epi_size):
             # initialize the environment for each episode
@@ -194,7 +219,7 @@ class Agent(BaseModel):
             for stp in xrange(self.step_size):
                 self.step += 1
                 # predict
-                action = self.predict(env.state)
+                action = self.predict(np.array([self.env.state]))
                 # Debug
                 print "Done prediction: Ep %d, Step %d" % (episode, stp)
                 #
@@ -208,6 +233,7 @@ class Agent(BaseModel):
                 # Debug
                 print "Done observe: Ep %d, Step %d" % (episode, stp)
                 #
+                # exit()
 
                 if terminal:
                     state = self.env.reset()
@@ -222,11 +248,15 @@ class Agent(BaseModel):
             if episode % self.check_point == 0:
                 self.evaluation()
 
-    def predict(self, state):
-        if random.random() < self.act_ep:
-            action = random.randrange(self.env.action_size)
-        else:
-            action = self.sess.run(q_action, {self.p_inp : self.crop(state), self.action_history : self.actionArray(1)})
+    def predict(self, states):
+        # Debug
+        print states
+        #
+        # #
+        # if random.random() < self.act_ep:
+        #     action = random.randrange(self.env.action_size)
+        # else:
+        action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
         return action
 
     def observe(self, state, action, reward, nxt_state, terminal):
@@ -282,7 +312,10 @@ class Agent(BaseModel):
             self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.sess.run(self.p_dqn_w[key])})
 
     def crop(self, states):
-        cropped = np.empty(s.shape[0], dtype = ndarray)
+        # Debug
+        # print states
+        #
+        cropped = np.empty([states.shape[0], 224, 224, 3], dtype = np.float32)
         cnt = 0
 
         for s in states:
@@ -291,8 +324,10 @@ class Agent(BaseModel):
             left = s.box[1]
             down = s.box[2]
             right = s.box[3]
-            cropped[cnt] = tf.constant_variable(img[up - 1 : down, left - 1 : right, :])
-            cropped[cnt] = tf.image.resize_image_with_crop_or_pad(cropped[cnt], 224, 224)
+            patch = tf.constant(img[up - 1 : down, left - 1 : right, :])
+            resized_patch = tf.image.resize_image_with_crop_or_pad(patch, 224, 224)
+            casted_patch = tf.cast(resized_patch, dtype = tf.float32)
+            cropped[cnt] = self.sess.run(casted_patch)
             cnt += 1
 
         return cropped

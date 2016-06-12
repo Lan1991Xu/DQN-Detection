@@ -21,6 +21,7 @@ class Pool(object):
         self.pos -= 1
         self.data_start = 0
         self.reader = tf.WholeFileReader()
+        self.size = self.img_files.shape[0]
 
     def query(self, idx, sess):
         p = self.pos[idx]
@@ -66,3 +67,6 @@ class Dataset(object):
 
     def get_data(self, name, idx, sess):
         return self.data[name].query(idx, sess)
+
+    def get_size(self, name):
+        return self.data[name].size

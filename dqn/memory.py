@@ -8,8 +8,8 @@ class Memory(object):
         self.mem_size = mem_size
         self.s = np.empty(mem_size, dtype = State)
         self.act = np.empty(mem_size, dtype = int)
-        self.rwd = np.empty(mem_size, dtype = int)
-        self.s_nxt = np.empty(mem_size, dtype = State)
+        self.rew = np.empty(mem_size, dtype = int)
+        self.nxt = np.empty(mem_size, dtype = State)
         self.term = np.empty(mem_size, dtype = bool)
         self.reset()
 

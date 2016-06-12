@@ -8,7 +8,7 @@ from config import Config
 class State(object):
     def __init__(self, img, height, width):
         self.img = img
-        self.height, self.width = width 
+        self.height, self.width = height, width 
         # box = [top, left, down, right]
         self.box = [1, 1, self.height, self.width]  
 
@@ -30,6 +30,7 @@ class Environment(object):
         self.eps = config.eps
         self.define_act()
         self.sess = sess
+        self.train_size = self.data.get_size('train')
     
     def _act(self, action):
         self.move[str(action)]()
@@ -114,16 +115,18 @@ class Environment(object):
     def reset(self, isTrain = True):
         if isTrain:
             self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
-            #
-            print type(pic)
-            exit()
-            #
+            ## Debug
+            #print type(pic)
+            #exit()
+            ##
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.cur_img = (self.cur_img + 1) % self.train_size
         else:
             self.ground_truth, pic = self.data.get_data('test_img', self.cur_img)
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.cur_img += 1
+
+        self._calc_IoU()
 
         return self.state
 
@@ -136,6 +139,6 @@ class Environment(object):
             return False
 
     def act(self, action):
-        pre_IoU = self.state.IoU
+        pre_IoU = self.IoU
         self._act(action)
-        return self.state, self._sign(self.IoU - pre_IoU), _isTerminal()
+        return self.state, self._sign(self.IoU - pre_IoU), self._isTerminal()

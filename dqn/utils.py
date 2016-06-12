@@ -20,8 +20,9 @@ def readImg(path, reader, sess):
     coord.request_stop()
     coord.join(thread)
 
-    print img.shape
     # Debug
-    exit()
-    #
+    #print img.shape
+    ## Debug
+    #exit()
+    ##
     return img
