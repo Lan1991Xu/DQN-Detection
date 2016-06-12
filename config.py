@@ -37,7 +37,7 @@ class Config(object):
         self.accept_rate = 0.65
         
         # I/O Settings
-        self.train_dir = "/data1/dengboyang/VOCdevkit/VOC2012/JPEGImages/" 
-        self.train_ano_dir = "/data1/dengboyang/VOCdevkit/VOC2012/Annotations/"
+        self.train_dir = "../VOCdevkit/VOC2012/JPEGImages/" 
+        self.train_ano_dir = "../VOCdevkit/VOC2012/Annotations/"
         self.test_dir = None
         self.test_ano_dir = None

@@ -33,9 +33,19 @@ class Pool(object):
             self.data_start = (self.data_start + 1) % self.size
 
         # Debug
-        tmp = ndimage.imread(self.img_files[idx])
-        print tmp.shape, tmp.dtype
+        reader = tf.WholeFileReader()
+        path = tf.train.string_input_producer([self.img_files[idx]])
+        _, value = reader.read(path) #self.img_files[idx])
+        tmp = tf.image.decode_jpeg(value, channels = 3)
+        # tmp = ndimage.imread(self.img_files[idx])
+        print "Right here at 41"
+        sess = tf.Session()
+        print "Right here at 43"
+        sess.run(tmp)
+        print tmp
+        
         exit()
+        print tmp.shape, tmp.dtype
         #
         return self.gt[p], self.data[p]
 

@@ -175,10 +175,10 @@ class Agent(BaseModel):
 
     def train(self):
         # DQN initialization
-        self.sess.run(tf.initialize_all_variables())
-        self.update_target_net()
-        self.ep_rewards = []
-        self.update_count = 0
+        # self.sess.run(tf.initialize_all_variables())
+        # self.update_target_net()
+        # self.ep_rewards = []
+        # self.update_count = 0
         self.mem.reset()
         self.env.clear()
         self.step = 0
