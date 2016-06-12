@@ -19,7 +19,7 @@ class State(object):
         self.box[3] = min(self.box[3], self.width)
 
 class Environment(object):
-    def __init__(self, config):
+    def __init__(self, config, sess):
         self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.pool_size)
         self.cur_img = 0
         self.alpha = config.alpha 
@@ -29,6 +29,7 @@ class Environment(object):
         self.accept_rate = config.accept_rate
         self.eps = config.eps
         self.define_act()
+        self.sess = sess
     
     def _act(self, action):
         self.move[str(action)]()
@@ -112,7 +113,7 @@ class Environment(object):
         self.cur_img = 0
     def reset(self, isTrain = True):
         if isTrain:
-            self.ground_truth, pic = self.data.get_data('train', self.cur_img)
+            self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
             #
             print type(pic)
             exit()

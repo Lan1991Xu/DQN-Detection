@@ -1,5 +1,6 @@
 from scipy import misc 
 from .utils import readXML
+from .utils import readImg
 
 import numpy as np
 import tensorflow as tf
@@ -19,8 +20,9 @@ class Pool(object):
         self.ids -= 1
         self.pos -= 1
         self.data_start = 0
+        self.reader = tf.WholeFileReader()
 
-    def query(self, idx):
+    def query(self, idx, sess):
         p = self.pos[idx]
         if p == -1:
             if self.ids[self.data_start] != -1:
@@ -28,45 +30,11 @@ class Pool(object):
                 self.pos[kick] = -1
             self.ids[self.data_start] = idx
             self.pos[idx] = self.data_start
-            self.data[self.data_start] = misc.imread(self.img_files[idx])
+            self.data[self.data_start] = readImg(self.img_files[idx], self.reader, sess)
             self.gt[self.data_start] = readXML(self.ano_files[idx]) 
             p = self.data_start
             self.data_start = (self.data_start + 1) % self.size
 
-        # Debug
-        # reader = tf.WholeFileReader()
-        # path = tf.train.string_input_producer([self.img_files[idx]])
-        # _, value = reader.read(path) #self.img_files[idx])
-        # sess = tf.Session()
-
-        # print value
-
-        # coord = tf.train.Coordinator()
-        # th = tf.train.start_queue_runners(sess = sess, coord = coord)
-        
-        # print "OK at 45"
-
-        # print "Done at 48"
-        # tmp = tf.image.decode_jpeg(value, channels = 3).eval(session = sess)
-
-        # coord.request_stop()
-
-        # coord.join(th)
-        # sess.close()
-        # print "Now at 52"
-
-        # print tmp.get_shape().as_list()
-
-        # exit()
-
-        img = misc.imread(self.img_files[idx])
-        print "Right here at 41"
-        # print tmp
-        print img.size
-        tmp = tf.Variable(img)
-        print tmp.get_shape().as_list(), tmp.dtype
-        exit()
-        #
         return self.gt[p], self.data[p]
 
 class Dataset(object):
@@ -96,5 +64,5 @@ class Dataset(object):
 
         self.data[name] = Pool(img_files, ano_files, self.pool_size)
 
-    def get_data(self, name, idx):
-        return self.data[name].query(idx)
+    def get_data(self, name, idx, sess):
+        return self.data[name].query(idx, sess)

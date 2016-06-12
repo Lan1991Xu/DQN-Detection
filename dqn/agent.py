@@ -22,7 +22,7 @@ class Agent(BaseModel):
         self.build_dqn_net(config, False)
         self.build_dqn_net(config, True)
         self.mem = Memory(config.mem_capacity)
-        self.env = Environment(config)
+        self.env = Environment(config, sess)
         self.action_status = 0
         self.sess = sess
 
