@@ -113,6 +113,10 @@ class Environment(object):
     def reset(self, isTrain = True):
         if isTrain:
             self.ground_truth, pic = self.data.get_data('train', self.cur_img)
+            #
+            print type(pic)
+            exit()
+            #
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.cur_img = (self.cur_img + 1) % self.train_size
         else:

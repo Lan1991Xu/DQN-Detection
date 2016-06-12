@@ -3,7 +3,7 @@ import tensorflow as tf
 import os
 import sys
 
-from scipy import misc
+from scipy import ndimage 
 from .utils import readXML
 
 class Pool(object):
@@ -21,16 +21,22 @@ class Pool(object):
 
     def query(self, idx):
         p = self.pos[idx]
-        if p != -1:
+        if p == -1:
             if self.ids[self.data_start] != -1:
                 kick = self.ids[self.data_start]
                 self.pos[kick] = -1
             self.ids[self.data_start] = idx
             self.pos[idx] = self.data_start
-            self.data[self.data_start] = misc.imread(self.img_files[idx])
+            self.data[self.data_start] = ndimage.imread(self.img_files[idx])
             self.gt[self.data_start] = readXML(self.ano_files[idx]) 
             p = self.data_start
             self.data_start = (self.data_start + 1) % self.size
+
+        # Debug
+        tmp = ndimage.imread(self.img_files[idx])
+        print tmp.shape, tmp.dtype
+        exit()
+        #
         return self.gt[p], self.data[p]
 
 class Dataset(object):
@@ -47,13 +53,16 @@ class Dataset(object):
         if self.te_dir != None:
             self._scan_dir('test', self.te_dir, self.te_ano_dir)
 
-    # self_scan
+    # directory_scan
     def _scan_dir(self, name, img_path, ano_path):
+        img_files = []
         for dir_path, _, dir_files in os.walk(img_path):
-            img_files = dir_files
-
+            for f in dir_files:
+                img_files.append(os.path.join(dir_path, f))
+        ano_files = []
         for dir_path, _, dir_files in os.walk(ano_path):
-            ano_files = dir_files
+            for f in dir_files:
+                ano_files.append(os.path.join(dir_path, f))
 
         self.data[name] = Pool(img_files, ano_files, self.pool_size)
 
