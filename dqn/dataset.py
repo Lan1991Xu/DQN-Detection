@@ -1,10 +1,11 @@
+from scipy import misc 
+from .utils import readXML
+
 import numpy as np
 import tensorflow as tf
 import os
 import sys
 
-from scipy import ndimage 
-from .utils import readXML
 
 class Pool(object):
     def __init__(self, img_files, ano_files, size):
@@ -27,25 +28,44 @@ class Pool(object):
                 self.pos[kick] = -1
             self.ids[self.data_start] = idx
             self.pos[idx] = self.data_start
-            self.data[self.data_start] = ndimage.imread(self.img_files[idx])
+            self.data[self.data_start] = misc.imread(self.img_files[idx])
             self.gt[self.data_start] = readXML(self.ano_files[idx]) 
             p = self.data_start
             self.data_start = (self.data_start + 1) % self.size
 
         # Debug
-        reader = tf.WholeFileReader()
-        path = tf.train.string_input_producer([self.img_files[idx]])
-        _, value = reader.read(path) #self.img_files[idx])
-        tmp = tf.image.decode_jpeg(value, channels = 3)
-        # tmp = ndimage.imread(self.img_files[idx])
-        print "Right here at 41"
-        sess = tf.Session()
-        print "Right here at 43"
-        sess.run(tmp)
-        print tmp
+        # reader = tf.WholeFileReader()
+        # path = tf.train.string_input_producer([self.img_files[idx]])
+        # _, value = reader.read(path) #self.img_files[idx])
+        # sess = tf.Session()
+
+        # print value
+
+        # coord = tf.train.Coordinator()
+        # th = tf.train.start_queue_runners(sess = sess, coord = coord)
         
+        # print "OK at 45"
+
+        # print "Done at 48"
+        # tmp = tf.image.decode_jpeg(value, channels = 3).eval(session = sess)
+
+        # coord.request_stop()
+
+        # coord.join(th)
+        # sess.close()
+        # print "Now at 52"
+
+        # print tmp.get_shape().as_list()
+
+        # exit()
+
+        img = misc.imread(self.img_files[idx])
+        print "Right here at 41"
+        # print tmp
+        print img.size
+        tmp = tf.Variable(img)
+        print tmp.get_shape().as_list(), tmp.dtype
         exit()
-        print tmp.shape, tmp.dtype
         #
         return self.gt[p], self.data[p]
 
