@@ -6,7 +6,6 @@ from config import Config
 def main(args):
 
     with tf.Session() as sess:
-        
         config = Config() 
         player = Agent(config, sess)
 

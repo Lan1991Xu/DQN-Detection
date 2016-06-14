@@ -18,16 +18,16 @@ class Agent(BaseModel):
         """
         super(Agent, self).__init__(config)
         self.action_history = tf.placeholder('float32', [None, config.action_size], 'action_history')
-        self.build_cnn_net(config, False)
-        self.build_cnn_net(config, True)
-        self.build_dqn_net(config, False)
-        self.build_dqn_net(config, True)
+        self.build_cnn_net(False)
+        self.build_cnn_net(True)
+        self.build_dqn_net(False)
+        self.build_dqn_net(True)
         self.mem = Memory(config.mem_capacity)
         self.env = Environment(config, sess)
         self.action_status = 0
         self.sess = sess
 
-    def build_cnn_net(self, config, target):
+    def build_cnn_net(self, target):
         """build cnn_net part
 
         build the 5 conv layers cnn to extract features.
@@ -35,8 +35,8 @@ class Agent(BaseModel):
         """
         # initializer, rectifier and normalizer
         activation = tf.nn.relu
-        w_initializer = tf.truncated_normal_initializer(config.ini_mean, config.ini_stddev)
-        b_initializer = tf.constant_initializer(config.bias_starter)
+        w_initializer = tf.truncated_normal_initializer(self.ini_mean, self.ini_stddev)
+        b_initializer = tf.constant_initializer(self.bias_starter)
 
         if target:
             scope_name = 't_CNN'
@@ -53,28 +53,22 @@ class Agent(BaseModel):
 
         with tf.variable_scope(scope_name):
             # CNN_l1(including pooling and normlization)
-            l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv1', padding = 'VALID')
-            # Debug
-            print "l1 = ", l1.get_shape().as_list()
-            #
+            l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv1')
             pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool1')
-            # Debug
-            print "pool1 = ", pool1.get_shape().as_list()
-            #
 
             # CNN_l2(including pooling and normlization)
-            l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv2')
-            pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool2')
+            l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv2')
+            pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool2')
             
             # CNN_l3
-            l3, cur_w['l3_w'], cur_w['l3_b'] = cov_layer(pool2, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv3')
+            l3, cur_w['l3_w'], cur_w['l3_b'] = cov_layer(pool2, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv3')
 
             # CNN_l4
-            l4, cur_w['l4_w'], cur_w['l4_b'] = cov_layer(l3, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv4')
+            l4, cur_w['l4_w'], cur_w['l4_b'] = cov_layer(l3, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv4')
 
             # CNN_l5
-            l5, cur_w['l5_w'], cur_w['l5_b'] = cov_layer(l4, 256, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv5')
-            pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool5')
+            l5, cur_w['l5_w'], cur_w['l5_b'] = cov_layer(l4, 256, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv5')
+            pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool5')
 
             # CNN_l5 reshape
             shape = pool5.get_shape().as_list()
@@ -98,7 +92,7 @@ class Agent(BaseModel):
                     self.cnn_assign_op[key] = self.t_cnn_w[key].assign(self.cnn_assign_inp[key])
 
 
-    def build_dqn_net(self, config, target):
+    def build_dqn_net(self, target):
         """build dqn part
 
         build the 2 fc layers dqn to q_function.
@@ -106,8 +100,8 @@ class Agent(BaseModel):
         """
         # initializer and rectifier
         activation = tf.nn.relu
-        w_initializer = tf.truncated_normal_initializer(config.ini_mean, config.ini_stddev)
-        b_initializer = tf.constant_initializer(config.bias_starter)
+        w_initializer = tf.truncated_normal_initializer(self.ini_mean, self.ini_stddev)
+        b_initializer = tf.constant_initializer(self.bias_starter)
 
         # inp_size = config.featureDimension + config.actionDimension
         
@@ -132,7 +126,7 @@ class Agent(BaseModel):
             l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(l1, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
 
             # DQN_output
-            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l2, config.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
+            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l2, self.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
         
             if target:
                 self.t_q = out
@@ -148,7 +142,7 @@ class Agent(BaseModel):
                 self.dqn_gt_q = tf.placeholder('float32', [None], name = 'dqn_gt_q')
                 self.action = tf.placeholder('int64', [None], name = 'action')
 
-                action_one_hot = tf.one_hot(self.action, config.action_size, 1.0, 0.0, name = 'action_one_hot')
+                action_one_hot = tf.one_hot(self.action, self.action_size, 1.0, 0.0, name = 'action_one_hot')
                 q_acted = tf.reduce_sum(self.p_q * action_one_hot, reduction_indices = 1, name = 'q_acted')
 
                 self.dqn_delta = self.dqn_gt_q - q_acted
@@ -164,7 +158,7 @@ class Agent(BaseModel):
                             self.dqn_learning_rate_decay_step,
                             self.dqn_learning_rate_decay,
                             staircase = True))
-                self.dqn_optim = tf.train.RMSPropOptimizer(self.dqn_learning_rate_op, momentum = config.dqn_momentum, epsilon = config.dqn_epsilon).minimize(self.dqn_loss)
+                self.dqn_optim = tf.train.RMSPropOptimizer(self.dqn_learning_rate_op, momentum = self.dqn_momentum, epsilon = self.dqn_epsilon).minimize(self.dqn_loss)
         else:
             with tf.variable_scope('dqn_transfer'):
                 self.dqn_assign_inp = {}
@@ -184,7 +178,7 @@ class Agent(BaseModel):
         # timer
         print "Spent %.4fsecs initializing..." % (time.time() - st)
         st = time.time()
-        #
+        # To be uncommented
         # self.update_target_net()
         # timer
         print "Spent %.4fsecs assigning..." % (time.time() - st)

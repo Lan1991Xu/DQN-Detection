@@ -33,9 +33,6 @@ class Environment(object):
         self.train_size = self.data.get_size('train')
     
     def _act(self, action):
-        # DEBUG
-        print action, str(action)
-        #
         self.move[str(action)]()
         self.state.clip_box()
         self._calc_IoU()
@@ -118,14 +115,10 @@ class Environment(object):
     def reset(self, isTrain = True):
         if isTrain:
             self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
-            ## Debug
-            #print type(pic)
-            #exit()
-            ##
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.cur_img = (self.cur_img + 1) % self.train_size
         else:
-            self.ground_truth, pic = self.data.get_data('test_img', self.cur_img)
+            self.ground_truth, pic = self.data.get_data('test', self.cur_img)
             self.state = State(pic, pic.shape[0], pic.shape[1])
             self.cur_img += 1
 

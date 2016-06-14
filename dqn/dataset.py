@@ -10,7 +10,6 @@ import sys
 
 class Pool(object):
     def __init__(self, img_files, ano_files, size):
-        self.size = size
         self.img_files = np.array(img_files)
         self.ano_files = np.array(ano_files)
         self.data = np.empty(size, dtype = np.ndarray) 
