@@ -11,34 +11,20 @@ def readImg(path, reader, sess):
     # DEBUG
     print path
     #
-    path = tf.train.string_input_producer([path])
+    path = tf.train.string_input_producer([path], shuffle = False, capacity = 1)
     
     _, value = reader.read(path)
     
     coord = tf.train.Coordinator()
-    try:
-        thread = tf.train.start_queue_runners(sess = sess, coord = coord)
-    except RuntimeError:
-        pass
+    thread = tf.train.start_queue_runners(sess = sess, coord = coord)
 
     sess.run(value) 
     # DEBUG
-    print path.size().eval(session = sess)
+    # print value
     #
     img = tf.image.decode_jpeg(value, channels = 3).eval(session = sess)
-    # imgRead = tf.image.decode_jpeg(value, channels = 3)
-    # img = sess.run(imgRead)
 
-    # DEBUG
-    print img
-    #
+    coord.request_stop()
+    coord.join(thread)
 
-    # coord.request_stop()
-    # coord.join(thread)
-
-    # Debug
-    #print img.shape
-    ## Debug
-    #exit()
-    ##
     return img
