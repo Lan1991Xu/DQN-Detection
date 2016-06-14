@@ -33,6 +33,9 @@ class Environment(object):
         self.train_size = self.data.get_size('train')
     
     def _act(self, action):
+        # DEBUG
+        print action, str(action)
+        #
         self.move[str(action)]()
         self.state.clip_box()
         self._calc_IoU()

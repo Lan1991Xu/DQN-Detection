@@ -100,17 +100,5 @@ I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow devi
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:5) -> (device: 5, name: Tesla K80, pci bus id: 0000:88:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:6) -> (device: 6, name: Tesla K80, pci bus id: 0000:8d:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:7) -> (device: 7, name: Tesla K80, pci bus id: 0000:8e:00.0)
-Traceback (most recent call last):
-  File "main.py", line 18, in <module>
-    tf.app.run()
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/platform/app.py", line 30, in run
-    sys.exit(main(sys.argv))
-  File "main.py", line 10, in main
-    player = Agent(config, sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 21, in __init__
-    self.build_cnn_net(config, False)
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 79, in build_cnn_net
-    l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 79, in <lambda>
-    l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
-TypeError: unsupported operand type(s) for *: 'NoneType' and 'NoneType'
+/data1/dengboyang/DQN-Detection/dqn/agent.py:322: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
+  patch = tf.constant(img[up - 1 : down, left - 1 : right, :])

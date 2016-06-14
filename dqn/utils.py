@@ -8,17 +8,33 @@ def readXML(path):
     return np.array([int(bnd.find('xmin').text), int(bnd.find('ymin').text), int(bnd.find('xmax').text), int(bnd.find('ymax').text)], dtype = int)
 
 def readImg(path, reader, sess):
+    # DEBUG
+    print path
+    #
     path = tf.train.string_input_producer([path])
+    
     _, value = reader.read(path)
     
     coord = tf.train.Coordinator()
-    thread = tf.train.start_queue_runners(sess = sess, coord = coord)
+    try:
+        thread = tf.train.start_queue_runners(sess = sess, coord = coord)
+    except RuntimeError:
+        pass
 
     sess.run(value) 
+    # DEBUG
+    print path.size().eval(session = sess)
+    #
     img = tf.image.decode_jpeg(value, channels = 3).eval(session = sess)
-    
-    coord.request_stop()
-    coord.join(thread)
+    # imgRead = tf.image.decode_jpeg(value, channels = 3)
+    # img = sess.run(imgRead)
+
+    # DEBUG
+    print img
+    #
+
+    # coord.request_stop()
+    # coord.join(thread)
 
     # Debug
     #print img.shape

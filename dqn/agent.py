@@ -51,20 +51,16 @@ class Agent(BaseModel):
             self.p_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 'p_inp')
             inp = self.p_inp
 
-        # # resize the image
-        # for scr in inp[:]:
-        #     scr = tf.image.resize_image_with_crop_or_pad(scr, 224, 224)
-
         with tf.variable_scope(scope_name):
             # CNN_l1(including pooling and normlization)
-            l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv1')
-            ## Debug
-            #print "l1 = ", l1.get_shape().as_list()
-            ##
-            pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'SAME', name = 'pool1')
-            ## Debug
-            #print "pool1 = ", pool1.get_shape().as_list()
-            ##
+            l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv1', padding = 'VALID')
+            # Debug
+            print "l1 = ", l1.get_shape().as_list()
+            #
+            pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool1')
+            # Debug
+            print "pool1 = ", pool1.get_shape().as_list()
+            #
 
             # CNN_l2(including pooling and normlization)
             l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, name = 'cnn_conv2')
@@ -239,7 +235,7 @@ class Agent(BaseModel):
                     state = self.env.reset()
                     self.action_status = 0
                 else:
-                    state = nxt_state.copy()
+                    state = nxt_state
                     self.action_status |= 1 << action
 
                 # info
@@ -249,14 +245,11 @@ class Agent(BaseModel):
                 self.evaluation()
 
     def predict(self, states):
-        # Debug
-        print states
-        #
-        # #
-        # if random.random() < self.act_ep:
-        #     action = random.randrange(self.env.action_size)
-        # else:
-        action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
+        if random.random() < self.act_ep:
+            action = random.randrange(self.env.action_size)
+        else:
+            action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
+            action = action[0]
         return action
 
     def observe(self, state, action, reward, nxt_state, terminal):
@@ -279,13 +272,13 @@ class Agent(BaseModel):
 
         s, action, reward, s_nxt, terminal = self.mem.sample(self.batch_size)
 
-        q_nxt = self.sess.run(t_q, {self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size)})
+        q_nxt = self.sess.run(self.t_q, {self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size)})
         
         terminal = np.array(terminal) + 0.
         max_q_nxt = np.max(q_nxt, axis = 1)
         ground_truth = (1. - terminal) * self.discount * max_q_nxt + reward
 
-        _, q_t, loss = self.sess.run([self.dqn_optim, self.p_q, self.loss], {
+        _, q_t, loss = self.sess.run([self.dqn_optim, self.p_q, self.dqn_loss], {
                 self.dqn_gt_q : ground_truth,
                 self.action : action,
                 self.p_inp : self.crop(s),
@@ -294,6 +287,8 @@ class Agent(BaseModel):
                 })
 
         self.update_count += 1
+        # DEBUG
+        print "Update_count : %d" % self.update_count, loss
 
     def actionArray(self, sz):
         arr = np.zeros([sz, self.action_size], dtype = float)
