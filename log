@@ -100,64 +100,15 @@ I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow devi
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:5) -> (device: 5, name: Tesla K80, pci bus id: 0000:88:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:6) -> (device: 6, name: Tesla K80, pci bus id: 0000:8d:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:7) -> (device: 7, name: Tesla K80, pci bus id: 0000:8e:00.0)
-/data1/dengboyang/DQN-Detection/dqn/agent.py:316: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-  patch = tf.constant(img[up - 1 : down, left - 1 : right, :])
 Traceback (most recent call last):
-  File "main.py", line 18, in <module>
+  File "main.py", line 17, in <module>
     tf.app.run()
   File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/platform/app.py", line 30, in run
     sys.exit(main(sys.argv))
-  File "main.py", line 13, in main
+  File "main.py", line 12, in main
     player.train()
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 203, in train
+  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 208, in train
     state = self.env.reset()   
-  File "/data1/dengboyang/DQN-Detection/dqn/environtment.py", line 117, in reset
-    self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/dataset.py", line 68, in get_data
-    return self.data[name].query(idx, sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/dataset.py", line 33, in query
-    self.data[self.data_start] = readImg(self.img_files[idx], self.reader, sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/utils.py", line 25, in readImg
-    img = tf.image.decode_jpeg(value, channels = 3).eval(session = sess)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/ops.py", line 502, in eval
-    return _eval_using_default_session(self, feed_dict, self.graph, session)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/ops.py", line 3334, in _eval_using_default_session
-    return session.run(tensors, feed_dict)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 340, in run
-    run_metadata_ptr)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 564, in _run
-    feed_dict_string, options, run_metadata)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 637, in _do_run
-    target_list, options, run_metadata)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 659, in _do_call
-    e.code)
-tensorflow.python.framework.errors.OutOfRangeError: FIFOQueue '_2_input_producer_1' is closed and has insufficient elements (requested 1, current size 0)
-	 [[Node: ReaderRead_1 = ReaderRead[_device="/job:localhost/replica:0/task:0/cpu:0"](WholeFileReader, input_producer_1)]]
-Caused by op u'ReaderRead_1', defined at:
-  File "main.py", line 18, in <module>
-    tf.app.run()
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/platform/app.py", line 30, in run
-    sys.exit(main(sys.argv))
-  File "main.py", line 13, in main
-    player.train()
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 203, in train
-    state = self.env.reset()
-  File "/data1/dengboyang/DQN-Detection/dqn/environtment.py", line 117, in reset
-    self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/dataset.py", line 68, in get_data
-    return self.data[name].query(idx, sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/dataset.py", line 33, in query
-    self.data[self.data_start] = readImg(self.img_files[idx], self.reader, sess)
-  File "/data1/dengboyang/DQN-Detection/dqn/utils.py", line 16, in readImg
-    _, value = reader.read(path)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/ops/io_ops.py", line 327, in read
-    return gen_io_ops._reader_read(self._reader_ref, queue_ref, name=name)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/ops/gen_io_ops.py", line 142, in _reader_read
-    queue_handle=queue_handle, name=name)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/ops/op_def_library.py", line 655, in apply_op
-    op_def=op_def)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/ops.py", line 2154, in create_op
-    original_op=self._default_original_op, op_def=op_def)
-  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/ops.py", line 1154, in __init__
-    self._traceback = _extract_stack()
-
+  File "/data1/dengboyang/DQN-Detection/dqn/environtment.py", line 121, in reset
+    self.ground_truth, pic = self.data.get_data('train', self.cur_img)
+TypeError: get_data() takes exactly 4 arguments (3 given)

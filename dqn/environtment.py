@@ -20,7 +20,7 @@ class State(object):
 
 class Environment(object):
     def __init__(self, config, sess):
-        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.pool_size)
+        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir)
         self.cur_img = 0
         self.alpha = config.alpha 
         self.state = None
@@ -31,7 +31,13 @@ class Environment(object):
         self.define_act()
         self.sess = sess
         self.train_size = self.data.get_size('train')
+        # need to be uncommented
+        # self.test_size = self.data.get_size('test')
     
+    def start_train(self):
+        self.coord = tf.train.Coordinator()
+        self.thread = tf.train.start_queue_runners(coord = self.coord, sess = self.sess)
+
     def _act(self, action):
         self.move[str(action)]()
         self.state.clip_box()
@@ -110,17 +116,14 @@ class Environment(object):
         self.state.box[1] += delta_y
         self.state.box[3] -= delta_y
 
-    def clear(self):
-        self.cur_img = 0
     def reset(self, isTrain = True):
         if isTrain:
-            self.ground_truth, pic = self.data.get_data('train', self.cur_img, self.sess)
-            self.state = State(pic, pic.shape[0], pic.shape[1])
-            self.cur_img = (self.cur_img + 1) % self.train_size
+            self.ground_truth, pic = self.data.get_data('train', self.sess)
         else:
             self.ground_truth, pic = self.data.get_data('test', self.cur_img)
-            self.state = State(pic, pic.shape[0], pic.shape[1])
-            self.cur_img += 1
+
+        img = self.sess.run(pic)
+        self.state = State(img, img.shape[0], img.shape[1])
 
         self._calc_IoU()
 
@@ -138,3 +141,13 @@ class Environment(object):
         pre_IoU = self.IoU
         self._act(action)
         return self.state, self._sign(self.IoU - pre_IoU), self._isTerminal()
+
+    def get_size(self, name):
+        if name == 'train':
+            return self.train_size
+        else:
+            return self.test_size
+
+    def end_train(self):
+        self.coord.request_stop()
+        self.coord.join(self.thread)

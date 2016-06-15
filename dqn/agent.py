@@ -191,12 +191,17 @@ class Agent(BaseModel):
         print "Spent %.4fsecs resetting..." % (time.time() - st)
         st = time.time()
         #
-        self.env.clear()
         self.step = 0
 
         # timer
         print "Spent %.4fsecs initializing..." % (time.time() - st)
         #
+        data_size = self.env.get_size('train')
+        if data_size > self.epi_size:
+            self.epi_size = data_size
+
+        # start the env.dataset.readerqueue
+        self.env.start_train()
 
         for episode in xrange(self.epi_size):
             # initialize the environment for each episode
@@ -226,8 +231,7 @@ class Agent(BaseModel):
                 # exit()
 
                 if terminal:
-                    state = self.env.reset()
-                    self.action_status = 0
+                    break
                 else:
                     state = nxt_state
                     self.action_status |= 1 << action
@@ -237,6 +241,9 @@ class Agent(BaseModel):
 
             if episode % self.check_point == 0:
                 self.evaluation()
+
+        # close the env.dataset.readerqueue
+        self.env.end_train()
 
     def predict(self, states):
         if random.random() < self.act_ep:
