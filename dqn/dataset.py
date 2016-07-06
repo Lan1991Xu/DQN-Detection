@@ -1,4 +1,3 @@
-from scipy import misc 
 from .utils import readXML
 
 import numpy as np

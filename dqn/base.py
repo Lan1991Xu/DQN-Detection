@@ -17,49 +17,35 @@ class BaseModel(object):
         except:
             self._attrs = class_vars(config)
     
-        self.config = config
-
         for attr in self._attrs:
             name = attr if not attr.startswith('_') else attr[1:]
             setattr(self, name, getattr(self.config, attr))
 
     def save_model(self, step = None):
-        print "[*] Now, saving checkpoints..."
+        print "[*] Now, saving checkpoints.........Path: " + self.model_dir
         model_name = type(self).__name__
 
-        if not os.path.exists(self.checkpoint_dir):
-            os.makedirs(self.checkpoint_dir)
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
 
-        self.saver.save(self.sess, self.checkpoint_dir, gloabl_step = step)
+        self.saver.save(self.sess, self.model_dir, gloabl_step = step)
 
     def load_model(self):
         print "[*] Now, loading checkpoints..."
 
-        chkp = tf.train.get_checkpoint_state(self.checkpoint_dir)
+        chkp = tf.train.get_checkpoint_state(self.model_dir)
         if chkp and chkp.model_checkpoint_path:
             chkp_name = os.path.basename(chkp.model_checkpoint_path)
-            fname = os.path.join(self.checkpoint_dir, chkp_name)
+            fname = os.path.join(self.model_dir, chkp_name)
             self.saver.restore(self.sess, fname)
             print "[*] Now, load success: %s" % fname
             return True
         else:
-            print "[!] Error! Load failed: %s" % self.checkpoint_dir
+            print "[!] Error! Load failed: %s" % self.model_dir
             return False
-
-    @property
-    def checkpoint_dir(self):
-        return os.path.join('checkpoints', self.model_dir)
-
-    @property
-    def model_dir(self):
-        model_dir = self.config.env_name
-        for k, v in self._attrs.items():
-            if not k.startswith('_') and k not in ['display']:
-                model_dir += "/%s-%s" % (k, ",".join([str(i) for i in v]) if type(v) == list else v)
-        return model_dir + '/'
 
     @property
     def saver(self):
         if self._saver == None:
-            self._saver = tf.train.Saver(max_to_keep=10)
+            self._saver = tf.train.Saver(max_to_keep = 20)
         return self._saver

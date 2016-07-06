@@ -178,12 +178,9 @@ class Agent(BaseModel):
         # timer
         print "Spent %.4fsecs initializing..." % (time.time() - st)
         st = time.time()
-        # To be uncommented
-        # self.update_target_net()
-        # timer
-        print "Spent %.4fsecs assigning..." % (time.time() - st)
-        st = time.time()
-        #
+
+        self.update_target_net()
+
         self.ep_rewards = []
         self.update_count = 0
         self.mem.reset()
@@ -210,25 +207,21 @@ class Agent(BaseModel):
             # for x in xrange(self.mem_capacity):
                 # self.mem.add(state)
             self.action_status = 0
+            cur_sum_reward = 0
+            # used to demonstrate the actual action.
+            act_dic = np.array(['left', 'right', 'up', 'down', 'bigger', 'smaller', 'fatter', 'taller'])
             
             for stp in xrange(self.step_size):
                 self.step += 1
                 # predict
                 action = self.predict(np.array([self.env.state]))
-                # Debug
-                print "Done prediction: Ep %d, Step %d" % (episode, stp)
-                #
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # Debug
-                print "Done action: Ep %d, Step %d" % (episode, stp)
+                print "Done action %s: Ep %d, Step %d" % (act_dic[action], episode, stp)
                 #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal)
-                # Debug
-                print "Done observe: Ep %d, Step %d" % (episode, stp)
-                #
-                # exit()
 
                 if terminal:
                     break
@@ -237,10 +230,20 @@ class Agent(BaseModel):
                     self.action_status |= 1 << action
 
                 # info
-                print "Trained on episode %d, step %d" % (episode, stp)
+                cur_sum_reward += reward
+                print "Trained on episode %d, step %d:" % (episode, stp)
+                print "\tstep reward = %d, current sum reward = %d\n\tcurrent IoU = %.4f" % (reward, cur_sum_reward, self.env.IoU)
+                box = self.env.state.box
+                gt = self.env.ground_truth
+                print "\tbox:\t%d %d %d %d" % (box[0], box[1], box[2], box[3])
+                print "\tgt: \t%d %d %d %d" % (gt[0], gt[1], gt[2], gt[3])
+
+            # Demonstrate the final result concerning the task
+            # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
 
             if episode % self.check_point == 0:
                 self.evaluation()
+                self.record()
 
         # close the env.dataset.readerqueue
         self.env.end_train()
@@ -302,15 +305,21 @@ class Agent(BaseModel):
         return arr + act1d
 
     def update_target_net(self):
+        print "Now we start update..."
+
+        # timer
+        st = time.time()
         for key in self.p_cnn_w.keys():
             self.sess.run(self.cnn_assign_op[key], {self.cnn_assign_inp[key] : self.sess.run(self.p_cnn_w[key])})
         for key in self.p_dqn_w.keys():
             self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.sess.run(self.p_dqn_w[key])})
 
-    def crop(self, states):
-        # Debug
-        # print states
+        # timer
+        print "Spent %.4fsecs assigning..." % (time.time() - st)
+        st = time.time()
         #
+
+    def crop(self, states):
         cropped = np.empty([states.shape[0], 224, 224, 3], dtype = np.float32)
         cnt = 0
 
@@ -332,4 +341,4 @@ class Agent(BaseModel):
         pass 
 
     def record(self):
-        pass
+        self.save_model(step = self.update_count)

@@ -21,10 +21,11 @@ class State(object):
 class Environment(object):
     def __init__(self, config, sess):
         self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir)
-        self.cur_img = 0
-        self.alpha = config.alpha 
+        # self.cur_img = 0
+        self.alpha = config.alpha # This is the rescale step rate.
+        self.move_alpha = config.move_alpha # This is the movement step rate
         self.state = None
-        self.action_size = 8
+        self.action_size = config.action_size
         self.IoU = 0.0
         self.accept_rate = config.accept_rate
         self.eps = config.eps
@@ -76,17 +77,21 @@ class Environment(object):
         self.move['7'] = self.taller
 
     def move_left(self):
-        self.state.box[1] -= self.alpha
-        self.state.box[3] -= self.alpha
+        stp_size = int((self.state.box[3] - self.state.box[1]) * self.move_alpha)
+        self.state.box[1] -= stp_size
+        self.state.box[3] -= stp_size 
     def move_right(self):
-        self.state.box[1] += self.alpha
-        self.state.box[3] += self.alpha
+        stp_size = int((self.state.box[3] - self.state.box[1]) * self.move_alpha)
+        self.state.box[1] += stp_size 
+        self.state.box[3] += stp_size 
     def move_up(self):
-        self.state.box[0] -= self.alpha
-        self.state.box[2] -= self.alpha
+        stp_size = int((self.state.box[2] - self.state.box[0]) * self.move_alpha)
+        self.state.box[0] -= stp_size 
+        self.state.box[2] -= stp_size
     def move_down(self):
-        self.state.box[0] += self.alpha
-        self.state.box[2] += self.alpha
+        stp_size = int((self.state.box[2] - self.state.box[0]) * self.move_alpha)
+        self.state.box[0] += stp_size
+        self.state.box[2] += stp_size
     def bigger(self):
         delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
         delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
@@ -120,7 +125,7 @@ class Environment(object):
         if isTrain:
             self.ground_truth, pic = self.data.get_data('train', self.sess)
         else:
-            self.ground_truth, pic = self.data.get_data('test', self.cur_img)
+            self.ground_truth, pic = self.data.get_data('test', self.sess)
 
         img = self.sess.run(pic)
         self.state = State(img, img.shape[0], img.shape[1])
