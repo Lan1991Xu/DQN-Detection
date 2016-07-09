@@ -8,6 +8,7 @@ from .memory import Memory
 from .environtment import Environment, State
 from .base import BaseModel
 from config import Config
+from scipy.misc import imresize
 
 class Agent(BaseModel):
     def __init__(self, config, sess):
@@ -38,6 +39,7 @@ class Agent(BaseModel):
         w_initializer = tf.truncated_normal_initializer(self.ini_mean, self.ini_stddev)
         b_initializer = tf.constant_initializer(self.bias_starter)
 
+        
         if target:
             scope_name = 't_CNN'
             self.t_cnn_w = {}
@@ -50,6 +52,7 @@ class Agent(BaseModel):
             cur_w = self.p_cnn_w
             self.p_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 'p_inp')
             inp = self.p_inp
+
 
         with tf.variable_scope(scope_name):
             # CNN_l1(including pooling and normlization)
@@ -192,6 +195,7 @@ class Agent(BaseModel):
 
         # timer
         print "Spent %.4fsecs initializing..." % (time.time() - st)
+        st = time.time()
         #
         data_size = self.env.get_size('train')
         if data_size > self.epi_size:
@@ -241,7 +245,7 @@ class Agent(BaseModel):
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
 
-            if episode % self.check_point == 0:
+            if episode and episode % self.check_point == 0:
                 self.evaluation()
                 self.record()
 
@@ -249,7 +253,7 @@ class Agent(BaseModel):
         self.env.end_train()
 
     def predict(self, states):
-        if random.random() < self.act_ep:
+        if random.random() <= self.act_ep:
             action = random.randrange(self.env.action_size)
         else:
             action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
@@ -320,6 +324,10 @@ class Agent(BaseModel):
         #
 
     def crop(self, states):
+        # timer
+        c_st = time.time()
+        st = time.time()
+        #
         cropped = np.empty([states.shape[0], 224, 224, 3], dtype = np.float32)
         cnt = 0
 
@@ -329,12 +337,17 @@ class Agent(BaseModel):
             left = s.box[1]
             down = s.box[2]
             right = s.box[3]
-            patch = tf.constant(img[up - 1 : down, left - 1 : right, :])
-            resized_patch = tf.image.resize_image_with_crop_or_pad(patch, 224, 224)
-            casted_patch = tf.cast(resized_patch, dtype = tf.float32)
-            cropped[cnt] = self.sess.run(casted_patch)
+            # patch = tf.constant(img[up - 1 : down, left - 1 : right, :])
+            # resized_patch = tf.image.resize_image_with_crop_or_pad(patch, 224, 224)
+            # casted_patch = tf.cast(resized_patch, dtype = tf.float32)
+            # cropped[cnt] = self.sess.run(self.converter, {self.patch : img[up - 1 : down, left - 1 : right, : ]})
+            cropped[cnt] = imresize(img[up - 1 : down, left - 1 : right, : ], (224, 224), interp = 'bicubic')
             cnt += 1
-
+        # timer
+        print "Spent %.4fsecs cropping..." % (time.time() - c_st)
+        c_st = time.time()
+        #
+    
         return cropped
 
     def evaluation(self):

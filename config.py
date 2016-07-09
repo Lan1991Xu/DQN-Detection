@@ -3,10 +3,10 @@ class Config(object):
         scale = 10000
 
         # Environment Settings
-        self.mem_capacity = 50 * scale 
+        self.mem_capacity = 23 * scale 
         self.action_size = 8 # Movement type of the bounding_box
-        self.move_alpha = 0.25 # The movement size of the bounding_box 
-        self.alpha = 0.5 # The rescale rate of the bounding_box
+        self.move_alpha = 0.2 # The movement size of the bounding_box 
+        self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-9
         self.isTrain = True
 
@@ -24,12 +24,12 @@ class Config(object):
         self.max_delta = 5 # The bound of delta
         
         # Training Settings
-        self.epi_size = 1000 
-        self.step_size = 50
+        self.epi_size = 50 # The episodes size
+        self.step_size = 28
         self.check_point = 96  
         self.min_reward = -1 
         self.max_reward = 1
-        self.act_ep = 0.5 # The epsilon hyperparameter of epsilon-policy
+        self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
         self.batch_size = 5 
         self.learning_start_point = 30
         self.update_C = 8  

@@ -100,6 +100,7 @@ I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow devi
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:5) -> (device: 5, name: Tesla K80, pci bus id: 0000:88:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:6) -> (device: 6, name: Tesla K80, pci bus id: 0000:8d:00.0)
 I tensorflow/core/common_runtime/gpu/gpu_device.cc:755] Creating TensorFlow device (/gpu:7) -> (device: 7, name: Tesla K80, pci bus id: 0000:8e:00.0)
+W tensorflow/core/kernels/queue_base.cc:292] _0_input_producer: Skipping cancelled enqueue attempt with queue not closed
 Traceback (most recent call last):
   File "main.py", line 17, in <module>
     tf.app.run()
@@ -107,8 +108,12 @@ Traceback (most recent call last):
     sys.exit(main(sys.argv))
   File "main.py", line 12, in main
     player.train()
-  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 208, in train
-    state = self.env.reset()   
-  File "/data1/dengboyang/DQN-Detection/dqn/environtment.py", line 121, in reset
-    self.ground_truth, pic = self.data.get_data('train', self.cur_img)
-TypeError: get_data() takes exactly 4 arguments (3 given)
+  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 220, in train
+    action = self.predict(np.array([self.env.state]))
+  File "/data1/dengboyang/DQN-Detection/dqn/agent.py", line 258, in predict
+    action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
+  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 340, in run
+    run_metadata_ptr)
+  File "/usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py", line 548, in _run
+    np_val = np.array(subfeed_val, dtype=subfeed_t.dtype.as_numpy_dtype)
+ValueError: setting an array element with a sequence.

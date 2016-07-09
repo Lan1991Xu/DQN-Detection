@@ -28,7 +28,7 @@ class BaseModel(object):
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        self.saver.save(self.sess, self.model_dir, gloabl_step = step)
+        self.saver.save(self.sess, self.model_dir, global_step = step)
 
     def load_model(self):
         print "[*] Now, loading checkpoints..."
