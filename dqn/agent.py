@@ -323,6 +323,12 @@ class Agent(BaseModel):
         st = time.time()
         #
 
+    def context_crop(self, img, up, left, down, right):
+        up = max(0, up - 1 - 16)
+        left = max(0, left - 1 - 16)
+        down = min(img.shape[0], down + 16)
+        right = min(img.shape[1], right + 16)
+        return img[up : down, left : right, :]
     def crop(self, states):
         # timer
         c_st = time.time()
@@ -341,7 +347,8 @@ class Agent(BaseModel):
             # resized_patch = tf.image.resize_image_with_crop_or_pad(patch, 224, 224)
             # casted_patch = tf.cast(resized_patch, dtype = tf.float32)
             # cropped[cnt] = self.sess.run(self.converter, {self.patch : img[up - 1 : down, left - 1 : right, : ]})
-            cropped[cnt] = imresize(img[up - 1 : down, left - 1 : right, : ], (224, 224), interp = 'bicubic')
+            # cropped[cnt] = imresize(img[up - 1 : down, left - 1 : right, : ], (224, 224), interp = 'bicubic')
+            cropped[cnt] = imresize(self.context_crop(img, up, left, down, right), (224, 224), interp = 'bicubic')
             cnt += 1
         # timer
         print "Spent %.4fsecs cropping..." % (time.time() - c_st)
