@@ -22,10 +22,13 @@ class Environment(object):
     def __init__(self, config, sess):
         self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir)
         # self.cur_img = 0
-        self.alpha = config.alpha # This is the rescale step rate.
-        self.move_alpha = config.move_alpha # This is the movement step rate
+        self.alpha = config.alpha # The rescale step rate.
+        self.move_alpha = config.move_alpha # The movement step rate
+
         self.state = None
         self.action_size = config.action_size
+        self.tri_reward = config.trigger_reward
+        self.tri_thres = config.trigger_threshold
         self.IoU = 0.0
         self.accept_rate = config.accept_rate
         self.eps = config.eps
@@ -40,7 +43,7 @@ class Environment(object):
         self.thread = tf.train.start_queue_runners(coord = self.coord, sess = self.sess)
 
     def _act(self, action):
-        self.move[str(action)]()
+        self.move[action]()
         self.state.clip_box()
         self._calc_IoU()
     def _calc_area(self, box):
@@ -66,15 +69,15 @@ class Environment(object):
             self.IoU = 0.0
 
     def define_act(self):
-        self.move = {}
-        self.move['0'] = self.move_left
-        self.move['1'] = self.move_right
-        self.move['2'] = self.move_up
-        self.move['3'] = self.move_down
-        self.move['4'] = self.bigger
-        self.move['5'] = self.smaller
-        self.move['6'] = self.fatter
-        self.move['7'] = self.taller
+        self.move = [] 
+        self.move.append(self.move_left)
+        self.move.append(self.move_right)
+        self.move.append(self.move_up)
+        self.move.append(self.move_down)
+        self.move.append(self.bigger)
+        self.move.append(self.smaller)
+        self.move.append(self.fatter)
+        self.move.append(self.taller)
 
     def move_left(self):
         stp_size = int((self.state.box[3] - self.state.box[1]) * self.move_alpha)
@@ -120,6 +123,11 @@ class Environment(object):
         delta_y = int(delta_y)
         self.state.box[1] += delta_y
         self.state.box[3] -= delta_y
+    def trigger_reward(self):
+        if self.IoU >= self.tri_thres:
+            return self.tri_reward
+        else:
+            return -self.tri_reward
 
     def reset(self, isTrain = True):
         if isTrain:
@@ -144,8 +152,9 @@ class Environment(object):
 
     def act(self, action):
         pre_IoU = self.IoU
-        self._act(action)
-        return self.state, self._sign(self.IoU - pre_IoU), self._isTerminal()
+        if action != 8:
+            self._act(action)
+        return self.state, self._sign(self.IoU - pre_IoU) if action != 8 else self.trigger_reward(), self._isTerminal() or action == 8
 
     def get_size(self, name):
         if name == 'train':

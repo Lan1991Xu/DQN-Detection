@@ -172,31 +172,18 @@ class Agent(BaseModel):
                     self.dqn_assign_op[key] = self.t_dqn_w[key].assign(self.dqn_assign_inp[key])
 
     def train(self):
-        # DQN initialization
-        
         # timer
         st = time.time()
 
         self.sess.run(tf.initialize_all_variables())
-        # timer
-        print "Spent %.4fsecs initializing..." % (time.time() - st)
-        st = time.time()
 
         self.update_target_net()
 
         self.ep_rewards = []
         self.update_count = 0
         self.mem.reset()
-        # timer
-        print "Spent %.4fsecs resetting..." % (time.time() - st)
-        st = time.time()
-        #
         self.step = 0
 
-        # timer
-        print "Spent %.4fsecs initializing..." % (time.time() - st)
-        st = time.time()
-        #
         data_size = self.env.get_size('train')
         if self.epi_size > data_size:
             self.epi_size = data_size
@@ -208,12 +195,10 @@ class Agent(BaseModel):
             # initialize the environment for each episode
             state = self.env.reset()   
             state = State(state.img, state.height, state.width)
-            # for x in xrange(self.mem_capacity):
-                # self.mem.add(state)
             self.action_status = 0
             cur_sum_reward = 0
             # used to demonstrate the actual action.
-            act_dic = np.array(['left', 'right', 'up', 'down', 'bigger', 'smaller', 'fatter', 'taller'])
+            act_dic = np.array(['left', 'right', 'up', 'down', 'bigger', 'smaller', 'fatter', 'taller', 'trigger'])
             
             for stp in xrange(self.step_size):
                 self.step += 1
@@ -254,7 +239,7 @@ class Agent(BaseModel):
 
     def predict(self, states):
         if random.random() <= self.act_ep:
-            action = random.randrange(self.env.action_size)
+            action = random.randrange(self.action_size)
         else:
             action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
             action = action[0]

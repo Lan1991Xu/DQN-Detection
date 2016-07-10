@@ -1,10 +1,10 @@
 class Config(object):
     def __init__(self):
-        scale = 10000
-
         # Environment Settings
-        self.mem_capacity = 23 * scale 
-        self.action_size = 8 # Movement type of the bounding_box
+        self.mem_capacity = 9628 
+        self.action_size = 9 # Movement type of the bounding_box
+        self.trigger_reward = 3 # special reward for the trigger action
+        self.trigger_threshold = 0.5 # reward threshold for the trigger action
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-9
@@ -17,21 +17,21 @@ class Config(object):
         self.learning_rate_minimum = 0.00025
         self.dqn_learning_rate = 0.015
         self.dqn_learning_rate_decay = 0.96
-        self.dqn_learning_rate_decay_step = 5 * scale 
+        self.dqn_learning_rate_decay_step = 250000 
         self.dqn_momentum = 0.95
         self.dqn_epsilon = 0.01 # The epsilon hyperparameter of RMSPropOptimizer
         self.min_delta = -5 
         self.max_delta = 5 # The bound of delta
         
         # Training Settings
-        self.epi_size = 50 # The episodes size
-        self.step_size = 28
-        self.check_point = 28  
+        self.epi_size = 50000 # The episodes size
+        self.step_size = 40 
+        self.check_point = 512  
         self.mx_to_keep = 15
         self.min_reward = -1 
         self.max_reward = 1
         self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
-        self.batch_size = 5 
+        self.batch_size = 8 
         self.learning_start_point = 30
         self.update_C = 8  
         self.discount = 0.75 
