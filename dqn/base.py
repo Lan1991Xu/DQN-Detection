@@ -28,7 +28,7 @@ class BaseModel(object):
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        self.saver.save(self.sess, self.model_dir, global_step = step)
+        self.saver.save(self.sess, self.model_dir + 'snapshot', global_step = step)
 
     def load_model(self):
         print "[*] Now, loading checkpoints..."
@@ -47,5 +47,5 @@ class BaseModel(object):
     @property
     def saver(self):
         if self._saver == None:
-            self._saver = tf.train.Saver(max_to_keep = 20)
+            self._saver = tf.train.Saver(max_to_keep = self.config.mx_to_keep)
         return self._saver

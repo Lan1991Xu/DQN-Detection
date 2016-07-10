@@ -198,7 +198,7 @@ class Agent(BaseModel):
         st = time.time()
         #
         data_size = self.env.get_size('train')
-        if data_size > self.epi_size:
+        if self.epi_size > data_size:
             self.epi_size = data_size
 
         # start the env.dataset.readerqueue
@@ -247,7 +247,7 @@ class Agent(BaseModel):
 
             if episode and episode % self.check_point == 0:
                 self.evaluation()
-                self.record()
+                self.record(episode)
 
         # close the env.dataset.readerqueue
         self.env.end_train()
@@ -353,5 +353,5 @@ class Agent(BaseModel):
     def evaluation(self):
         pass 
 
-    def record(self):
-        self.save_model(step = self.update_count)
+    def record(self, epi_step):
+        self.save_model(step = epi_step)

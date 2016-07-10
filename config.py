@@ -26,7 +26,8 @@ class Config(object):
         # Training Settings
         self.epi_size = 50 # The episodes size
         self.step_size = 28
-        self.check_point = 96  
+        self.check_point = 28  
+        self.mx_to_keep = 15
         self.min_reward = -1 
         self.max_reward = 1
         self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
