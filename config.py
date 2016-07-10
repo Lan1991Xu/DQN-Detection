@@ -9,6 +9,7 @@ class Config(object):
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-9
         self.isTrain = True
+        self.act_his_len = 8 # The length of recent history
 
         # Network Settings
         self.ini_mean = 0.0
@@ -34,10 +35,10 @@ class Config(object):
         self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
         self.ep_decay_inter = 512 # The time interval of epsilon decay
         self.ep_decay_step = 0.01 # The step of epsilon decay
-        self.act_ep_threshold = 0.2 # The lower bound of epsilon
+        self.act_ep_threshold = 0.15 # The lower bound of epsilon
         self.batch_size = 8 
         self.learning_start_point = 30
-        self.update_C = 8  
+        self.update_C = 16  
         self.discount = 0.75 
         self.accept_rate = 0.5
         

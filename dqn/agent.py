@@ -25,7 +25,8 @@ class Agent(BaseModel):
         self.build_dqn_net(True)
         self.mem = Memory(config.mem_capacity)
         self.env = Environment(config, sess)
-        self.action_status = 0
+        self.action_status = np.zeros(config.act_his_len, dtype = np.uint8) 
+        self.action_his_code = 0
         self.sess = sess
 
     def build_cnn_net(self, target):
@@ -195,7 +196,7 @@ class Agent(BaseModel):
             # initialize the environment for each episode
             state = self.env.reset()   
             state = State(state.img, state.height, state.width)
-            self.action_status = 0
+            self.his_reset()
             cur_sum_reward = 0
             # used to demonstrate the actual action.
             act_dic = np.array(['left', 'right', 'up', 'down', 'bigger', 'smaller', 'fatter', 'taller', 'trigger'])
@@ -210,25 +211,27 @@ class Agent(BaseModel):
                 print "Done action %s: Ep %d, Step %d" % (act_dic[action], episode, stp)
                 #
                 # observe
-                self.observe(state, action, reward, nxt_state, terminal)
+                self.observe(state, action, reward, nxt_state, terminal, self.action_his_code)
 
                 if terminal:
                     break
                 else:
                     state = nxt_state
-                    self.action_status |= 1 << action
+                    self.his_add(action)
 
                 # info
                 cur_sum_reward += reward
-                print "Trained on episode %d, step %d:" % (episode, stp)
-                print "\tstep reward = %d, current sum reward = %d\n\tcurrent IoU = %.4f" % (reward, cur_sum_reward, self.env.IoU)
-                box = self.env.state.box
-                gt = self.env.ground_truth
-                print "\tbox:\t%d %d %d %d" % (box[0], box[1], box[2], box[3])
-                print "\tgt: \t%d %d %d %d" % (gt[0], gt[1], gt[2], gt[3])
+                # print "Trained on episode %d, step %d:" % (episode, stp)
+                # print "\tstep reward = %d, current sum reward = %d\n\tcurrent IoU = %.4f" % (reward, cur_sum_reward, self.env.IoU)
+                # box = self.env.state.box
+                # gt = self.env.ground_truth
+                # print "\tbox:\t%d %d %d %d" % (box[0], box[1], box[2], box[3])
+                # print "\tgt: \t%d %d %d %d" % (gt[0], gt[1], gt[2], gt[3])
 
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
+            print "Trained on episode %d, step %d:" % (episode, stp)
+            print "\tsum reward = %d\n\tcurrent IoU = %.4f" % (cur_sum_reward, self.env.IoU)
 
             if episode and episode % self.check_point == 0:
                 self.evaluation()
@@ -245,15 +248,15 @@ class Agent(BaseModel):
         if random.random() <= self.act_ep:
             action = self.env.get_random_positive() 
         else:
-            action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
+            action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states)})
             action = action[0]
         return action
 
-    def observe(self, state, action, reward, nxt_state, terminal):
+    def observe(self, state, action, reward, nxt_state, terminal, his_code):
         # clip reward
         reward = max(self.min_reward, min(self.max_reward, reward)) 
 
-        self.mem.add(state, action, reward, nxt_state, terminal)
+        self.mem.add(state, action, reward, nxt_state, terminal, his_code)
         if self.step < self.learning_start_point:
             return
 
@@ -267,9 +270,9 @@ class Agent(BaseModel):
         if self.mem.count < self.batch_size:
             return
 
-        s, action, reward, s_nxt, terminal = self.mem.sample(self.batch_size)
+        s, action, reward, s_nxt, terminal, his_code = self.mem.sample(self.batch_size)
 
-        q_nxt = self.sess.run(self.t_q, {self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size)})
+        q_nxt = self.sess.run(self.t_q, {self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size, his_code | (1 << action))})
         
         terminal = np.array(terminal) + 0.
         max_q_nxt = np.max(q_nxt, axis = 1)
@@ -280,22 +283,22 @@ class Agent(BaseModel):
                 self.action : action,
                 self.p_inp : self.crop(s),
                 self.dqn_learning_rate_step: self.step,
-                self.action_history: self.actionArray(self.batch_size)
+                self.action_history: self.actionArray(self.batch_size, his_code)
                 })
 
         self.update_count += 1
         # DEBUG
         print "Update_count : %d" % self.update_count, loss
 
-    def actionArray(self, sz):
+    def actionArray(self, sz, act_his):
         arr = np.zeros([sz, self.action_size], dtype = float)
-        act1d = np.empty([self.action_size], dtype = float)
-        for x in xrange(self.action_size):
-            if (self.action_status >> x) & 1 == 1:
-                act1d[x] = 1.0
-            else:
-                act1d[x] = 0.0 
-        return arr + act1d
+        for i in xrange(sz):
+            for j in xrange(self.action_size):
+                if (act_his[i] >> j) & 1 == 1:
+                    arr[i][j] = 1.0
+                else:
+                    arr[i][j] = 0.0 
+        return arr
 
     def update_target_net(self):
         print "Now we start update..."
@@ -311,6 +314,20 @@ class Agent(BaseModel):
         print "Spent %.4fsecs assigning..." % (time.time() - st)
         st = time.time()
         #
+
+    def his_reset(self):
+        self.his_head = 0
+        self.his_cnt = 0
+    def his_add(self, action):
+        if self.his_cnt >= 8:
+            self.action_status[self.his_head] = action
+            self.his_head = (self.his_head + 1) % self.act_his_len
+        else:
+            self.action_status[self.his_head + self.his_cnt] = action
+        self.his_cnt += 1
+        self.action_his_code = 0
+        for x in xrange(min(8, self.his_cnt)):
+            self.action_his_code |= self.action_status[(self.his_head + x) % self.act_his_len]
 
     def context_crop(self, img, up, left, down, right):
         up = max(0, up - 1 - 16)
