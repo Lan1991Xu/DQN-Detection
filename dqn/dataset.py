@@ -44,6 +44,7 @@ class Dataset(object):
         for dir_path, _, dir_files in os.walk(img_path):
             for f in dir_files:
                 img_files.append(os.path.join(dir_path, f))
+
         ano_files = []
         for dir_path, _, dir_files in os.walk(ano_path):
             for f in dir_files:

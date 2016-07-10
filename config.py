@@ -4,7 +4,7 @@ class Config(object):
         self.mem_capacity = 9628 
         self.action_size = 9 # Movement type of the bounding_box
         self.trigger_reward = 3 # special reward for the trigger action
-        self.trigger_threshold = 0.5 # reward threshold for the trigger action
+        self.trigger_threshold = 0.6 # reward threshold for the trigger action
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-9
