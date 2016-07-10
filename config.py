@@ -24,13 +24,17 @@ class Config(object):
         self.max_delta = 5 # The bound of delta
         
         # Training Settings
-        self.epi_size = 50000 # The episodes size
+        self.tot_epoches = 15
+        self.epi_size = 150000 # The episodes size
         self.step_size = 40 
         self.check_point = 512  
         self.mx_to_keep = 15
         self.min_reward = -1 
         self.max_reward = 1
         self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
+        self.ep_decay_inter = 512 # The time interval of epsilon decay
+        self.ep_decay_step = 0.01 # The step of epsilon decay
+        self.act_ep_threshold = 0.2 # The lower bound of epsilon
         self.batch_size = 8 
         self.learning_start_point = 30
         self.update_C = 8  

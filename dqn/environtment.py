@@ -20,7 +20,7 @@ class State(object):
 
 class Environment(object):
     def __init__(self, config, sess):
-        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir)
+        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.tot_epoches)
         # self.cur_img = 0
         self.alpha = config.alpha # The rescale step rate.
         self.move_alpha = config.move_alpha # The movement step rate
@@ -161,6 +161,26 @@ class Environment(object):
             return self.train_size
         else:
             return self.test_size
+    def get_random_positive(self):
+        possible = []
+        for option in xrange(self.action_size):
+            if option != 8:
+                his_box = np.copy(self.state.box)
+                his_IoU = self.IoU
+                self._act(option)
+                if self._sign(self.IoU - his_IoU) > 0:
+                    possible.append(option)
+                self.state.box = his_box
+                self.IoU = his_IoU
+            else:
+                if self.trigger_reward() > 0:
+                    possible.append(option)
+        
+        pos_cnt = len(possible)
+        if pos_cnt != 0:
+            return possible[np.random.randint(0, pos_cnt)]
+        else:
+            return np.random.randint(0, self.action_size)
 
     def end_train(self):
         self.coord.request_stop()
