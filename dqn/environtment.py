@@ -20,7 +20,7 @@ class State(object):
 
 class Environment(object):
     def __init__(self, config, sess):
-        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir)
+        self.data = Dataset(config.train_dir, config.train_ano_dir, config.test_dir, config.test_ano_dir, config.tot_epoches)
         # self.cur_img = 0
         self.alpha = config.alpha # The rescale step rate.
         self.move_alpha = config.move_alpha # The movement step rate
