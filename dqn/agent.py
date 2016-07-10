@@ -239,7 +239,7 @@ class Agent(BaseModel):
 
     def predict(self, states):
         if random.random() <= self.act_ep:
-            action = random.randrange(self.action_size)
+            action = self.env.get_random_positive() 
         else:
             action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1), self.p_inp: self.crop(states)})
             action = action[0]
@@ -336,8 +336,8 @@ class Agent(BaseModel):
             cropped[cnt] = imresize(self.context_crop(img, up, left, down, right), (224, 224), interp = 'bicubic')
             cnt += 1
         # timer
-        print "Spent %.4fsecs cropping..." % (time.time() - c_st)
-        c_st = time.time()
+        # print "Spent %.4fsecs cropping..." % (time.time() - c_st)
+        # c_st = time.time()
         #
     
         return cropped

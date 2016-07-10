@@ -161,6 +161,26 @@ class Environment(object):
             return self.train_size
         else:
             return self.test_size
+    def get_random_positive(self):
+        possible = []
+        for option in xrange(self.action_size):
+            if option != 8:
+                his_box = np.copy(self.state.box)
+                his_IoU = self.IoU
+                self._act(option)
+                if self._sign(self.IoU - his_IoU) > 0:
+                    possible.append(option)
+                self.state.box = his_box
+                self.IoU = his_IoU
+            else:
+                if self.trigger_reward() > 0:
+                    possible.append(option)
+        
+        pos_cnt = len(possible)
+        if pos_cnt != 0:
+            return possible[np.random.randint(0, pos_cnt)]
+        else:
+            return np.random.randint(0, self.action_size)
 
     def end_train(self):
         self.coord.request_stop()
