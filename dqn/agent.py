@@ -176,17 +176,24 @@ class Agent(BaseModel):
         # timer
         st = time.time()
 
-        self.sess.run(tf.initialize_all_variables())
-
-        self.update_target_net()
+        if self.isLoadFromModel:
+            self.load_model()
+        else:
+            self.sess.run(tf.initialize_all_variables())
+            self.update_target_net()
 
         self.update_count = 0
         self.mem.reset()
         self.step = 0
 
+        self.epi_size -= self.train_start_point
+
         data_size = self.env.get_size('train')
         if self.epi_size > data_size:
             self.epi_size = data_size
+
+        self.ep_decay_step = (self.act_ep - self.act_ep_threshold) / (1. * data_size / self.tot_epoches * self.decay_epoches)
+        self.act_ep -= self.ep_decay_step * self.train_start_point
 
         # start the env.dataset.readerqueue
         self.env.start()
@@ -203,11 +210,11 @@ class Agent(BaseModel):
             for stp in xrange(self.step_size):
                 self.step += 1
                 # predict
-                action = self.predict(np.array([self.env.state]))
+                action = self.predict(np.array([state]))
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # Debug
-                print "Done action %s: Ep %d, Step %d" % (act_dic[action], episode, stp)
+                print "Done action %s: Ep %d, Step %d" % (act_dic[action], episode + self.train_start_point, stp)
                 #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal, self.action_his_code)
@@ -229,16 +236,17 @@ class Agent(BaseModel):
 
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
-            print "Trained on episode %d, step %d:" % (episode, stp)
+            # Debug
+            print "Trained on episode %d, step %d:" % (episode + self.train_start_point + 1, stp)
             print "\tsum reward = %d\n\tcurrent IoU = %.4f" % (cur_sum_reward, self.env.IoU)
 
             if episode and episode % self.check_point == 0:
                 self.evaluation()
-                self.record(episode)
+                self.record(episode + self.train_start_point)
 
             # epsilon decay
-            if episode and self.act_ep > self.act_ep_threshold and episode % self.ep_decay_inter == 0:
-                self.act_ep -= self.ep_decay_step
+            # if episode and self.act_ep > self.act_ep_threshold and episode % self.ep_decay_inter == 0:
+            self.act_ep -= self.ep_decay_step
 
         # close the env.dataset.readerqueue
         self.env.end()
@@ -252,15 +260,14 @@ class Agent(BaseModel):
         # load model
         self.load_model()
 
-        # Debug
-        total_step = -1
-
         self.env.start()
         print "[*] Starting test..."
         for epi in xrange(total):
             state = self.env.reset(isTrain = False)   
             state = State(state.img, state.height, state.width)
             self.his_reset()
+            # Debug
+            total_step = -1
 
             for stp in xrange(self.step_size):
                 # predict
@@ -390,17 +397,8 @@ class Agent(BaseModel):
             left = s.box[1]
             down = s.box[2]
             right = s.box[3]
-            # patch = tf.constant(img[up - 1 : down, left - 1 : right, :])
-            # resized_patch = tf.image.resize_image_with_crop_or_pad(patch, 224, 224)
-            # casted_patch = tf.cast(resized_patch, dtype = tf.float32)
-            # cropped[cnt] = self.sess.run(self.converter, {self.patch : img[up - 1 : down, left - 1 : right, : ]})
-            # cropped[cnt] = imresize(img[up - 1 : down, left - 1 : right, : ], (224, 224), interp = 'bicubic')
             cropped[cnt] = imresize(self.context_crop(img, up, left, down, right), (224, 224), interp = 'bicubic')
             cnt += 1
-        # timer
-        # print "Spent %.4fsecs cropping..." % (time.time() - c_st)
-        # c_st = time.time()
-        #
     
         return cropped
 

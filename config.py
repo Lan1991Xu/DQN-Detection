@@ -1,14 +1,15 @@
 class Config(object):
     def __init__(self):
         # Environment Settings
-        self.mem_capacity = 9628 
+        self.mem_capacity = 628 
         self.action_size = 9 # Movement type of the bounding_box
         self.trigger_reward = 3 # special reward for the trigger action
         self.trigger_threshold = 0.6 # reward threshold for the trigger action
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
-        self.eps = 1e-9
+        self.eps = 1e-12
         self.isTrain = True 
+        self.isLoadFromModel = True 
         self.act_his_len = 8 # The length of recent history
 
         # Network Settings
@@ -26,24 +27,24 @@ class Config(object):
         
         # Training Settings
         self.tot_epoches = 15
-        self.epi_size = 150000 # The episodes size
+        self.decay_epoches = 5
+        self.epi_size = 80000 # The episodes size
         self.step_size = 40 
         self.check_point = 64  
         self.mx_to_keep = 15
         self.min_reward = -1 
         self.max_reward = 1
         self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
-        self.ep_decay_inter = 16 # The time interval of epsilon decay
-        self.ep_decay_step = 0.028 # The step of epsilon decay
         self.act_ep_threshold = 0.15 # The lower bound of epsilon
         self.batch_size = 8 
         self.learning_start_point = 30
         self.update_C = 16  
         self.discount = 0.75 
         self.accept_rate = 0.8 
+        self.train_start_point = 1024
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-512"
+        self.load_path = "./Models/snapshot-1024"
         self.test_accept_rate = 0.5 
         
         # I/O Settings
