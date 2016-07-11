@@ -4,9 +4,19 @@ import tensorflow as tf
 
 def readXML(path):
     root = ET.parse(path).getroot()
-    bnd = root.findall('object')[0].find('bndbox')
-    up = float(bnd.find('xmin').text)
-    left = float(bnd.find('ymin').text)
-    down = float(bnd.find('xmax').text)
-    right = float(bnd.find('ymax').text)
+    bnds = root.findall('object')
+    mxs = 0.
+    for obj in bnds:
+        bnd = obj.find('bndbox')
+        tup = float(bnd.find('xmin').text)
+        tleft = float(bnd.find('ymin').text)
+        tdown = float(bnd.find('xmax').text)
+        tright = float(bnd.find('ymax').text)
+        ts = (tdown - tup) * (tright - tleft)
+        if ts > mxs:
+            mxs = ts
+            up = tup
+            left = tleft
+            down = tdown
+            right = tright
     return np.array([up, left, down, right], dtype = int)

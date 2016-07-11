@@ -276,12 +276,14 @@ class Agent(BaseModel):
                 action = self.predict(np.array([state]))
                 # act
                 state, reward, terminal = self.env.act(action)
+
                 if terminal:
                     total_step = stp + 1
                     break
                 else:
                     self.his_add(action)
             
+            print self.env.state.box
             if self.env.IoU >= self.test_accept_rate:
                 print "[*] Accepted! IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
                 ac += 1

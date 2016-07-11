@@ -8,8 +8,8 @@ class Config(object):
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-12
-        self.isTrain = True 
-        self.isLoadFromModel = True 
+        self.isTrain = False 
+        self.isLoadFromModel = False 
         self.act_his_len = 8 # The length of recent history
 
         # Network Settings
@@ -30,7 +30,7 @@ class Config(object):
         self.decay_epoches = 5
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
-        self.check_point = 64  
+        self.check_point = 32  
         self.mx_to_keep = 15
         self.min_reward = -1 
         self.max_reward = 1
@@ -41,10 +41,10 @@ class Config(object):
         self.update_C = 16  
         self.discount = 0.75 
         self.accept_rate = 0.95 
-        self.train_start_point = 1536
+        self.train_start_point = 0
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-1536"
+        self.load_path = "./Models/snapshot-32"
         self.test_accept_rate = 0.5 
         
         # I/O Settings
