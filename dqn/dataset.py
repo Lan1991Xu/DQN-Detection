@@ -25,30 +25,35 @@ class Pool(object):
         return self.gt, self.img
 
 class Dataset(object):
-    def __init__(self, train_dir, train_ano_dir, test_dir = None, test_ano_dir = None, tot_epoches = 1):
-        self.tr_dir = train_dir
-        self.tr_ano_dir = train_ano_dir
-        self.te_dir = test_dir
-        self.te_ano_dir = test_ano_dir
+    def __init__(self, train_list, img_dir, ano_dir, test_list = None, tot_epoches = 1):
+        self.train_list = train_list
+        self.test_list = test_list
+        self.ano_dir = ano_dir
+        self.img_dir = img_dir
         self.tot_epoches = tot_epoches
 
         self.data = {}
 
-        self._scan_dir('train', self.tr_dir, self.tr_ano_dir, self.tot_epoches)
-        if self.te_dir != None:
-            self._scan_dir('test', self.te_dir, self.te_ano_dir, 1)
+        self._get_list('train', self.img_dir, self.ano_dir, self.train_list, self.tot_epoches)
+        if self.test_list != None:
+            self._get_list('test', self.img_dir, self.ano_dir, self.test_list, 1)
 
     # directory_scan
-    def _scan_dir(self, name, img_path, ano_path, rep):
+    def _get_list(self, name, img_dir, ano_dir, img_list,rep):
         img_files = []
-        for dir_path, _, dir_files in os.walk(img_path):
-            for f in dir_files:
-                img_files.append(os.path.join(dir_path, f))
-
         ano_files = []
-        for dir_path, _, dir_files in os.walk(ano_path):
-            for f in dir_files:
-                ano_files.append(os.path.join(dir_path, f))
+        # for dir_path, _, dir_files in os.walk(img_path):
+        #     for f in dir_files:
+        #         img_files.append(os.path.join(dir_path, f))
+        list_input = open(img_list, 'r')
+        for line in list_input.readlines():
+            img_files.append(os.path.join(img_dir, line.split(' ')[0] + '.jpg'))
+            ano_files.append(os.path.join(ano_dir, line.split(' ')[0] + '.xml'))
+        list_input.close()
+
+        # for dir_path, _, dir_files in os.walk(ano_path):
+        #     for f in dir_files:
+        #         ano_files.append(os.path.join(dir_path, f))
 
         self.data[name] = Pool(img_files, ano_files, rep)
 
