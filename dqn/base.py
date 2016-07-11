@@ -31,18 +31,22 @@ class BaseModel(object):
         self.saver.save(self.sess, self.model_dir + 'snapshot', global_step = step)
 
     def load_model(self):
-        print "[*] Now, loading checkpoints..."
+        print "[*] Now, loading checkpoints... %s" % self.load_path
 
-        chkp = tf.train.get_checkpoint_state(self.model_dir)
-        if chkp and chkp.model_checkpoint_path:
-            chkp_name = os.path.basename(chkp.model_checkpoint_path)
-            fname = os.path.join(self.model_dir, chkp_name)
-            self.saver.restore(self.sess, fname)
-            print "[*] Now, load success: %s" % fname
-            return True
-        else:
-            print "[!] Error! Load failed: %s" % self.model_dir
-            return False
+        # chkp = tf.train.get_checkpoint_state(self.load_dir)
+        # if chkp and chkp.model_checkpoint_path:
+        #     chkp_name = os.path.basename(chkp.model_checkpoint_path)
+        #     fname = os.path.join(self.model_dir, chkp_name)
+        #     self.saver.restore(self.sess, fname)
+        #     print "[*] Now, load success: %s" % fname
+        #     return True
+        # else:
+        #     print "[!] Error! Load failed: %s" % self.model_dir
+        #     return False
+        self.saver.restore(self.sess, self.load_path)
+
+        print "[*] Model %s loaded." % self.load_path
+
 
     @property
     def saver(self):

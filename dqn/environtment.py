@@ -35,10 +35,9 @@ class Environment(object):
         self.define_act()
         self.sess = sess
         self.train_size = self.data.get_size('train')
-        # need to be uncommented
-        # self.test_size = self.data.get_size('test')
+        self.test_size = self.data.get_size('test')
     
-    def start_train(self):
+    def start(self):
         self.coord = tf.train.Coordinator()
         self.thread = tf.train.start_queue_runners(coord = self.coord, sess = self.sess)
 
@@ -182,6 +181,6 @@ class Environment(object):
         else:
             return np.random.randint(0, self.action_size)
 
-    def end_train(self):
+    def end(self):
         self.coord.request_stop()
         self.coord.join(self.thread)

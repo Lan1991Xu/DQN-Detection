@@ -11,7 +11,7 @@ def main(args):
         if config.isTrain:
             player.train()
         else:
-            pass
+            player.play() 
 
 if __name__ == '__main__':
     tf.app.run()

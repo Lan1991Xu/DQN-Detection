@@ -180,7 +180,6 @@ class Agent(BaseModel):
 
         self.update_target_net()
 
-        self.ep_rewards = []
         self.update_count = 0
         self.mem.reset()
         self.step = 0
@@ -190,7 +189,7 @@ class Agent(BaseModel):
             self.epi_size = data_size
 
         # start the env.dataset.readerqueue
-        self.env.start_train()
+        self.env.start()
 
         for episode in xrange(self.epi_size):
             # initialize the environment for each episode
@@ -242,10 +241,52 @@ class Agent(BaseModel):
                 self.act_ep -= self.ep_decay_step
 
         # close the env.dataset.readerqueue
-        self.env.end_train()
+        self.env.end()
+        self.update_target_net()
+
+    def play(self):
+        ac = 0
+        total = self.env.get_size('test')
+        self.env.accept_rate = 1.
+        
+        # load model
+        self.load_model()
+
+        # Debug
+        total_step = -1
+
+        self.env.start()
+        print "[*] Starting test..."
+        for epi in xrange(total):
+            state = self.env.reset(isTrain = False)   
+            state = State(state.img, state.height, state.width)
+            self.his_reset()
+
+            for stp in xrange(self.step_size):
+                # predict
+                action = self.predict(np.array([state]))
+                # act
+                state, reward, terminal = self.env.act(action)
+                if terminal:
+                    total_step = stp + 1
+                    break
+                else:
+                    self.his_add(action)
+            
+            if self.env.IoU >= self.test_accept_rate:
+                print "[*] Accepted! IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
+                ac += 1
+            else:
+                print "[!] Missed. IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
+
+            print "[*] Tested %d of %d, current AP = %.4f (%d/%d)" % (epi + 1, total, ac * 1. / (epi + 1.), ac, epi + 1)
+
+        self.env.end()
+        print "[*] Finish test."
+        print "[*] Final Ap = %.4f (%d/%d)" % (ac * 1. / (total + 1.), ac, total)
 
     def predict(self, states):
-        if random.random() <= self.act_ep:
+        if self.isTrain and random.random() <= self.act_ep:
             action = self.env.get_random_positive() 
         else:
             action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states)})
@@ -288,7 +329,7 @@ class Agent(BaseModel):
 
         self.update_count += 1
         # DEBUG
-        print "Update_count : %d" % self.update_count, loss
+        # print "Update_count : %d" % self.update_count, loss
 
     def actionArray(self, sz, act_his):
         arr = np.zeros([sz, self.action_size], dtype = float)

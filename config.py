@@ -8,7 +8,7 @@ class Config(object):
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-9
-        self.isTrain = True
+        self.isTrain = False 
         self.act_his_len = 8 # The length of recent history
 
         # Network Settings
@@ -40,11 +40,15 @@ class Config(object):
         self.learning_start_point = 30
         self.update_C = 16  
         self.discount = 0.75 
-        self.accept_rate = 0.5
+        self.accept_rate = 0.8 
+
+        # Testing Settings
+        self.load_path = "./Models/snapshot-512"
+        self.test_accept_rate = 0.5 
         
         # I/O Settings
         self.train_dir = "../VOCdevkit/VOC2012/JPEGImages/" 
         self.train_ano_dir = "../VOCdevkit/VOC2012/Annotations/"
         self.model_dir = "./Models/" # Snapshots directory
-        self.test_dir = None
-        self.test_ano_dir = None
+        self.test_dir = "../VOCdevkit/VOC2012/JPEGImages"
+        self.test_ano_dir = "../VOCdevkit/VOC2012/Annotations/" 
