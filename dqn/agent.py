@@ -194,6 +194,8 @@ class Agent(BaseModel):
 
         self.ep_decay_step = (self.act_ep - self.act_ep_threshold) / (1. * data_size / self.tot_epoches * self.decay_epoches)
         self.act_ep -= self.ep_decay_step * self.train_start_point
+        if self.act_ep < self.act_ep_threshold:
+            self.act_ep = self.act_ep_threshold
 
         # start the env.dataset.readerqueue
         self.env.start()
@@ -245,8 +247,8 @@ class Agent(BaseModel):
                 self.record(episode + self.train_start_point)
 
             # epsilon decay
-            # if episode and self.act_ep > self.act_ep_threshold and episode % self.ep_decay_inter == 0:
-            self.act_ep -= self.ep_decay_step
+            if self.act_ep > self.act_ep_threshold:
+                self.act_ep -= self.ep_decay_step
 
         # close the env.dataset.readerqueue
         self.env.end()

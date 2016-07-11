@@ -40,11 +40,11 @@ class Config(object):
         self.learning_start_point = 30
         self.update_C = 16  
         self.discount = 0.75 
-        self.accept_rate = 0.8 
-        self.train_start_point = 1024
+        self.accept_rate = 0.95 
+        self.train_start_point = 1536
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-1024"
+        self.load_path = "./Models/snapshot-1536"
         self.test_accept_rate = 0.5 
         
         # I/O Settings
