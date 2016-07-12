@@ -1,14 +1,14 @@
 class Config(object):
     def __init__(self):
         # Environment Settings
-        self.mem_capacity = 628 
+        self.mem_capacity = 19628 
         self.action_size = 9 # Movement type of the bounding_box
         self.trigger_reward = 3 # special reward for the trigger action
         self.trigger_threshold = 0.6 # reward threshold for the trigger action
         self.move_alpha = 0.2 # The movement size of the bounding_box 
         self.alpha = 0.2 # The rescale rate of the bounding_box
         self.eps = 1e-12
-        self.isTrain = True 
+        self.isTrain = False 
         self.isLoadFromModel = False 
         self.act_his_len = 8 # The length of recent history
 
@@ -17,7 +17,7 @@ class Config(object):
         self.ini_stddev = 0.02 # Ini_* are weights initialize hyperparameters
         self.bias_starter = 0.0 # Bias initialize hyperparameters
         self.learning_rate_minimum = 0.00025
-        self.dqn_learning_rate = 0.0005
+        self.dqn_learning_rate = 0.0015
         self.dqn_learning_rate_decay = 0.96
         self.dqn_learning_rate_decay_step = 50000 
         self.dqn_momentum = 0.95
@@ -27,14 +27,12 @@ class Config(object):
         
         # Training Settings
         self.tot_epoches = 15
-        self.decay_epoches = 3
+        self.decay_epoches = 7 
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
-        self.check_point = 64  
+        self.check_point = 128  
         self.mx_to_keep = 15
-        self.min_reward = -1 
-        self.max_reward = 1
-        self.act_ep = 0.8 # The epsilon hyperparameter of epsilon-policy
+        self.act_ep = 1. # The epsilon hyperparameter of epsilon-policy
         self.act_ep_threshold = 0.15 # The lower bound of epsilon
         self.batch_size = 8 
         self.learning_start_point = 30
@@ -43,9 +41,10 @@ class Config(object):
         self.accept_rate = 0.95 
         self.train_start_point = 0 
         self.target_class = "person"
+        self.dropout_prob = 0.5
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-992"
+        self.load_path = "./Models/snapshot-128"
         self.test_accept_rate = 0.5 
         
         # I/O Settings

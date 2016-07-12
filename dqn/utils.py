@@ -6,7 +6,6 @@ def readXML(path, target_class):
     root = ET.parse(path).getroot()
     bnds = root.findall('object')
     mxs = 0.
-    print path
     for obj in bnds:
         if obj.find('name').text != target_class:
             continue

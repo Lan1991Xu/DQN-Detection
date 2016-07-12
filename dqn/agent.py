@@ -118,16 +118,23 @@ class Agent(BaseModel):
             name_scope = 'p_DQN'
             self.p_dqn_w = {}
             cur_w = self.p_dqn_w
+            self.keep_prob = tf.placeholder(tf.float32)
             inp = self.p_cnn_out
 
         inp = tf.concat(1, [inp, self.action_history], name = name_scope + '_concat')  
+        if not target:
+            inp = tf.nn.dropout(inp, self.keep_prob)
 
         with tf.variable_scope(name_scope):
             # DQN_fc1
             l1, cur_w['l1_w'], cur_w['l1_b'] = fc_layer(inp, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l1')
-            
+            if not target:
+                l1 = tf.nn.dropout(l1, self.keep_prob) 
+
             # DQN_fc2
             l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(l1, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
+            if not target:
+                l2 = tf.nn.dropout(l2, self.keep_prob) 
 
             # DQN_output
             out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l2, self.action_size, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_q')
@@ -192,6 +199,11 @@ class Agent(BaseModel):
         if self.epi_size > data_size:
             self.epi_size = data_size
 
+        # Debug
+        # print data_size
+        # exit(0)
+        #
+
         self.ep_decay_step = (self.act_ep - self.act_ep_threshold) / (1. * data_size / self.tot_epoches * self.decay_epoches)
         self.act_ep -= self.ep_decay_step * self.train_start_point
         if self.act_ep < self.act_ep_threshold:
@@ -216,7 +228,7 @@ class Agent(BaseModel):
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # Debug
-                print "Done action %s: Ep %d, Step %d" % (act_dic[action], episode + self.train_start_point, stp)
+                print "Done action %s: Ep %d, Epsilon %.3f, Step %d" % (act_dic[action], episode + self.train_start_point, self.act_ep, stp)
                 #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal, self.action_his_code)
@@ -284,7 +296,6 @@ class Agent(BaseModel):
                 else:
                     self.his_add(action)
             
-            print self.env.state.box
             if self.env.IoU >= self.test_accept_rate:
                 print "[*] Accepted! IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
                 ac += 1
@@ -300,20 +311,21 @@ class Agent(BaseModel):
     def predict(self, states):
         if self.isTrain and random.random() <= self.act_ep:
             # Debug
-            print "Epsilon..." 
+            print "[*] Not Q-Greedy...",
+            #
             action = self.env.get_random_positive() 
         else:
-            [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states)})
             # Debug
-            print q_out
+            print "[*] Yes Q-Greedy...", 
+            #
+            [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states), self.keep_prob : self.dropout_prob if self.isTrain else 1.})
+            # Debug
+            # print q_out
             #
             action = action[0]
         return action
 
     def observe(self, state, action, reward, nxt_state, terminal, his_code):
-        # clip reward
-        reward = max(self.min_reward, min(self.max_reward, reward)) 
-
         self.mem.add(state, action, reward, nxt_state, terminal, his_code)
         if self.step < self.learning_start_point:
             return
@@ -339,9 +351,10 @@ class Agent(BaseModel):
         _, q_t, loss = self.sess.run([self.dqn_optim, self.p_q, self.dqn_loss], {
                 self.dqn_gt_q : ground_truth,
                 self.action : action,
-                self.p_inp : self.crop(s),
+                 self.p_inp : self.crop(s),
                 self.dqn_learning_rate_step: self.step,
-                self.action_history: self.actionArray(self.batch_size, his_code)
+                self.action_history: self.actionArray(self.batch_size, his_code),
+                self.keep_prob: self.dropout_prob
                 })
 
         self.update_count += 1
@@ -392,7 +405,7 @@ class Agent(BaseModel):
         left = max(0, left - 1 - 16)
         down = min(img.shape[0], down + 16)
         right = min(img.shape[1], right + 16)
-        return img[up : down, left : right, :]
+        return img[int(up): int(down), int(left): int(right), :]
     def crop(self, states):
         # timer
         c_st = time.time()
