@@ -17,20 +17,21 @@ class Pool(object):
         self.img = tf.image.decode_jpeg(value, channels = 3)
         self.size = self.img_files.shape[0]
 
-    def query(self, sess):
-        self.gt = readXML(self.ano_files[self.data_pos]) 
+    def query(self, sess, target_class):
+        self.gt = readXML(self.ano_files[self.data_pos], target_class) 
         self.data_pos += 1
         self.img.eval(session = sess)
 
         return self.gt, self.img
 
 class Dataset(object):
-    def __init__(self, train_list, img_dir, ano_dir, test_list = None, tot_epoches = 1):
+    def __init__(self, target_class, train_list, img_dir, ano_dir, test_list = None, tot_epoches = 1):
         self.train_list = train_list
         self.test_list = test_list
         self.ano_dir = ano_dir
         self.img_dir = img_dir
         self.tot_epoches = tot_epoches
+        self.target_class = target_class
 
         self.data = {}
 
@@ -47,8 +48,10 @@ class Dataset(object):
         #         img_files.append(os.path.join(dir_path, f))
         list_input = open(img_list, 'r')
         for line in list_input.readlines():
-            img_files.append(os.path.join(img_dir, line.split(' ')[0] + '.jpg'))
-            ano_files.append(os.path.join(ano_dir, line.split(' ')[0] + '.xml'))
+            sep = line.strip().split(' ')
+            if(sep[-1] != '-1'):
+                img_files.append(os.path.join(img_dir, sep[0] + '.jpg'))
+                ano_files.append(os.path.join(ano_dir, sep[0] + '.xml'))
         list_input.close()
 
         # for dir_path, _, dir_files in os.walk(ano_path):
@@ -58,7 +61,7 @@ class Dataset(object):
         self.data[name] = Pool(img_files, ano_files, rep)
 
     def get_data(self, name, sess):
-        return self.data[name].query(sess)
+        return self.data[name].query(sess, self.target_class)
 
     def get_size(self, name):
         return self.data[name].size

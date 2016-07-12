@@ -274,6 +274,7 @@ class Agent(BaseModel):
             for stp in xrange(self.step_size):
                 # predict
                 action = self.predict(np.array([state]))
+                print action
                 # act
                 state, reward, terminal = self.env.act(action)
 
@@ -298,9 +299,14 @@ class Agent(BaseModel):
 
     def predict(self, states):
         if self.isTrain and random.random() <= self.act_ep:
+            # Debug
+            print "Epsilon..." 
             action = self.env.get_random_positive() 
         else:
-            action = self.sess.run(self.q_action, {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states)})
+            [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states)})
+            # Debug
+            print q_out
+            #
             action = action[0]
         return action
 
