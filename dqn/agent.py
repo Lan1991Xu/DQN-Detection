@@ -167,10 +167,10 @@ class Agent(BaseModel):
                         tf.train.exponential_decay(
                             self.dqn_learning_rate,
                             self.dqn_learning_rate_step,
-                            self.dqn_learning_rate_decay_step,
-                            self.dqn_learning_rate_decay,
+                            self.dqn_learning_decay_step,
+                            self.dqn_learning_decay_rate,
                             staircase = True))
-                self.dqn_optim = tf.train.RMSPropOptimizer(self.dqn_learning_rate_op, momentum = self.dqn_momentum, epsilon = self.dqn_epsilon).minimize(self.dqn_loss)
+                self.dqn_optim = tf.train.GradientDescentOptimizer(self.dqn_learning_rate_op, name = 'optimizer').minimize(self.dqn_loss)
         else:
             with tf.variable_scope('dqn_transfer'):
                 self.dqn_assign_inp = {}

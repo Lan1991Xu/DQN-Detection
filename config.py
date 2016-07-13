@@ -18,19 +18,17 @@ class Config(object):
         self.bias_starter = 0.0 # Bias initialize hyperparameters
         self.learning_rate_minimum = 0.00025
         self.dqn_learning_rate = 0.001
-        self.dqn_learning_rate_decay = 0.96
-        self.dqn_learning_rate_decay_step = 5000
-        self.dqn_momentum = 0.95
-        self.dqn_epsilon = 0.01 # The epsilon hyperparameter of RMSPropOptimizer
+        self.dqn_learning_decay_rate = 0.96
+        self.dqn_learning_decay_step = 5000
         self.min_delta = -1 
         self.max_delta = 1 # The bound of delta
         
         # Training Settings
-        self.tot_epoches = 800 
-        self.decay_epoches = 300 
+        self.tot_epoches = 900 
+        self.decay_epoches = 450 
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
-        self.check_point = 10 
+        self.check_point = 100 
         self.mx_to_keep = 20 
         self.act_ep = 1. # The epsilon hyperparameter of epsilon-policy
         self.act_ep_threshold = 0.15 # The lower bound of epsilon
