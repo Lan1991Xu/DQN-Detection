@@ -58,7 +58,8 @@ class Dataset(object):
         #     for f in dir_files:
         #         ano_files.append(os.path.join(dir_path, f))
 
-        self.data[name] = Pool(img_files, ano_files, rep)
+        # Debug
+        self.data[name] = Pool(img_files[0 : 1], ano_files[0 : 1], rep)
 
     def get_data(self, name, sess):
         return self.data[name].query(sess, self.target_class)

@@ -157,10 +157,11 @@ class Agent(BaseModel):
                 q_acted = tf.reduce_sum(self.p_q * action_one_hot, reduction_indices = 1, name = 'q_acted')
 
                 self.dqn_delta = self.dqn_gt_q - q_acted
-                self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
+                # TBD
+                # self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
                 # self.global_step = tf.Varialbe(0, trainable = False)
 
-                self.dqn_loss = tf.reduce_mean(tf.square(self.clipped_delta), name = 'dqn_loss')
+                self.dqn_loss = tf.reduce_mean(tf.square(self.dqn_delta), name = 'dqn_loss')
                 self.dqn_learning_rate_step = tf.placeholder('int64', None, name = 'learning_rate_step')
                 self.dqn_learning_rate_op = tf.maximum(self.learning_rate_minimum,
                         tf.train.exponential_decay(
@@ -296,6 +297,7 @@ class Agent(BaseModel):
                 else:
                     self.his_add(action)
             
+            print self.env.state.box
             if self.env.IoU >= self.test_accept_rate:
                 print "[*] Accepted! IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
                 ac += 1

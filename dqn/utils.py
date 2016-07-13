@@ -10,10 +10,10 @@ def readXML(path, target_class):
         if obj.find('name').text != target_class:
             continue
         bnd = obj.find('bndbox')
-        tup = float(bnd.find('xmin').text)
-        tleft = float(bnd.find('ymin').text)
-        tdown = float(bnd.find('xmax').text)
-        tright = float(bnd.find('ymax').text)
+        tup = float(bnd.find('ymin').text)
+        tleft = float(bnd.find('xmin').text)
+        tdown = float(bnd.find('ymax').text)
+        tright = float(bnd.find('xmax').text)
         ts = (tdown - tup) * (tright - tleft)
         if ts > mxs:
             mxs = ts
