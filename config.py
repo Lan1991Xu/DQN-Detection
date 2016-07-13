@@ -19,14 +19,14 @@ class Config(object):
         self.learning_rate_minimum = 0.00025
         self.dqn_learning_rate = 0.001
         self.dqn_learning_decay_rate = 0.96
-        self.dqn_learning_decay_step = 4096
-        self.min_delta = -1 
-        self.max_delta = 1 # The bound of delta
+        self.dqn_learning_decay_step = 2048
+        self.min_delta = -100 
+        self.max_delta = 100 # The bound of delta
         
         # Training Settings
-        self.tot_epoches = 2200 
-        self.decay_epoches = 600 
-        self.guide_epoches = 500
+        self.tot_epoches = 1200 
+        self.decay_epoches = 400 
+        self.guide_epoches = 0 
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
         self.check_point = 100 
@@ -40,9 +40,10 @@ class Config(object):
         self.train_start_point = 0 
         self.target_class = "person"
         self.dropout_prob = 0.3
+        self.pretrained_model = "./Models/vgg16-20160129.tfmodel"
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-2199"
+        self.load_path = "./Snapshots/snapshot-1199"
         self.test_accept_rate = 0.5 
         
         # I/O Settings
@@ -50,4 +51,4 @@ class Config(object):
         self.ano_dir = "../VOCdevkit/VOC2012/Annotations/"
         self.train_list = "../VOCdevkit/VOC2012/ImageSets/Main/person_train.txt" 
         self.test_list = "../VOCdevkit/VOC2012/ImageSets/Main/person_val.txt"
-        self.model_dir = "./Models/" # Snapshots directory
+        self.model_dir = "./Snapshots/" # Snapshots directory

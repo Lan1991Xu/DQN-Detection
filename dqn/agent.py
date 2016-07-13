@@ -18,9 +18,10 @@ class Agent(BaseModel):
 
         """
         super(Agent, self).__init__(config)
+        # self.build_cnn_net(False)
+        # self.build_cnn_net(True)
+        self.build_vgg()
         self.action_history = tf.placeholder('float32', [None, config.action_size], 'action_history')
-        self.build_cnn_net(False)
-        self.build_cnn_net(True)
         self.build_dqn_net(False)
         self.build_dqn_net(True)
         self.mem = Memory(config.mem_capacity)
@@ -29,71 +30,85 @@ class Agent(BaseModel):
         self.action_his_code = 0
         self.sess = sess
 
-    def build_cnn_net(self, target):
-        """build cnn_net part
+    def build_vgg(self):
+        with open(self.pretrained_model, mode = 'rb') as f:
+            model = f.read()
 
-        build the 5 conv layers cnn to extract features.
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(model)
 
-        """
-        # initializer, rectifier and normalizer
-        activation = tf.nn.relu
-        w_initializer = tf.truncated_normal_initializer(self.ini_mean, self.ini_stddev)
-        b_initializer = tf.constant_initializer(self.bias_starter)
+
+        self.img_inp = tf.placeholder('float32', [None, 224, 224, 3])
+        tf.import_graph_def(graph_def, input_map = {'images': self.img_inp})
+
+        self.vgg_output = tf.get_default_graph().get_tensor_by_name('import/Relu:0')
+
+
+    # def build_cnn_net(self, target):
+    #     """build cnn_net part
+
+    #     build the 5 conv layers cnn to extract features.
+
+    #     """
+    #     # initializer, rectifier and normalizer
+    #     activation = tf.nn.relu
+    #     w_initializer = tf.truncated_normal_initializer(self.ini_mean, self.ini_stddev)
+    #     b_initializer = tf.constant_initializer(self.bias_starter)
 
         
-        if target:
-            scope_name = 't_CNN'
-            self.t_cnn_w = {}
-            cur_w = self.t_cnn_w 
-            self.t_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 't_inp')
-            inp = self.t_inp
-        else:
-            scope_name = 'p_CNN'
-            self.p_cnn_w = {}
-            cur_w = self.p_cnn_w
-            self.p_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 'p_inp')
-            inp = self.p_inp
+    #     if target:
+    #         scope_name = 't_CNN'
+    #         self.t_cnn_w = {}
+    #         cur_w = self.t_cnn_w 
+    #         self.t_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 't_inp')
+    #         inp = self.t_inp
+    #     else:
+    #         scope_name = 'p_CNN'
+    #         self.p_cnn_w = {}
+    #         cur_w = self.p_cnn_w
+    #         self.p_inp = tf.placeholder('float32', [None, 224, 224, 3], name = 'p_inp')
+    #         inp = self.p_inp
 
 
-        with tf.variable_scope(scope_name):
-            # CNN_l1(including pooling and normlization)
-            l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv1')
-            pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool1')
+    #     with tf.variable_scope(scope_name):
+    #         # CNN_l1(including pooling and normlization)
+    #         l1, cur_w['l1_w'], cur_w['l1_b'] = cov_layer(inp, 96, [7, 7], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv1')
+    #         pool1 = tf.nn.max_pool(l1, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool1')
 
-            # CNN_l2(including pooling and normlization)
-            l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv2')
-            pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool2')
+    #         # CNN_l2(including pooling and normlization)
+    #         l2, cur_w['l2_w'], cur_w['l2_b'] = cov_layer(pool1, 256, [5, 5], [2, 2], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv2')
+    #         pool2 = tf.nn.max_pool(l2, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool2')
             
-            # CNN_l3
-            l3, cur_w['l3_w'], cur_w['l3_b'] = cov_layer(pool2, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv3')
+    #         # CNN_l3
+    #         l3, cur_w['l3_w'], cur_w['l3_b'] = cov_layer(pool2, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv3')
 
-            # CNN_l4
-            l4, cur_w['l4_w'], cur_w['l4_b'] = cov_layer(l3, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv4')
+    #         # CNN_l4
+    #         l4, cur_w['l4_w'], cur_w['l4_b'] = cov_layer(l3, 384, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv4')
 
-            # CNN_l5
-            l5, cur_w['l5_w'], cur_w['l5_b'] = cov_layer(l4, 256, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv5')
-            pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool5')
+    #         # CNN_l5
+    #         l5, cur_w['l5_w'], cur_w['l5_b'] = cov_layer(l4, 256, [3, 3], [1, 1], w_initializer = w_initializer, b_initializer = b_initializer, activation = activation, padding = 'VALID', name = 'cnn_conv5')
+    #         pool5 = tf.nn.max_pool(l5, ksize = [1, 3, 3, 1], strides = [1, 2, 2, 1], padding = 'VALID', name = 'pool5')
 
-            # CNN_l5 reshape
-            shape = pool5.get_shape().as_list()
-            l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
+    #         # CNN_l5 reshape
+    #         shape = pool5.get_shape().as_list()
+    #         l5_flat = tf.reshape(pool5, [-1, reduce(lambda x, y: x * y, shape[1:])], name = 'l5_flat')
             
-            # CNN_output
-            out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l5_flat, 4096, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'output')
+    #         # CNN_output
+    #         out, cur_w['output_w'], cur_w['output_b'] = fc_layer(l5_flat, 4096, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'output')
 
-            if target:
-                self.t_cnn_out = out
-            else:
-                self.p_cnn_out = out
+    #         if target:
+    #             self.t_cnn_out = out
+    #         else:
+    #             self.p_cnn_out = out
 
-        if target:
-            with tf.variable_scope('cnn_transfer'):
-                self.cnn_assign_inp = {}
-                self.cnn_assign_op = {}
+    #     if target:
+    #         with tf.variable_scope('cnn_transfer'):
+    #             self.cnn_assign_inp = {}
+    #             self.cnn_assign_op = {}
 
-                for key in self.p_cnn_w.keys():
-                    self.cnn_assign_inp[key] = tf.placeholder('float32', self.p_cnn_w[key].get_shape().as_list(), name = key)
-                    self.cnn_assign_op[key] = self.t_cnn_w[key].assign(self.cnn_assign_inp[key])
+    #             for key in self.p_cnn_w.keys():
+    #                 self.cnn_assign_inp[key] = tf.placeholder('float32', self.p_cnn_w[key].get_shape().as_list(), name = key)
+    #                 self.cnn_assign_op[key] = self.t_cnn_w[key].assign(self.cnn_assign_inp[key])
 
 
     def build_dqn_net(self, target):
@@ -113,13 +128,13 @@ class Agent(BaseModel):
             name_scope = 't_DQN'
             self.t_dqn_w = {}
             cur_w = self.t_dqn_w
-            inp = self.t_cnn_out
+            inp = self.vgg_output
         else:
             name_scope = 'p_DQN'
             self.p_dqn_w = {}
             cur_w = self.p_dqn_w
             self.keep_prob = tf.placeholder(tf.float32)
-            inp = self.p_cnn_out
+            inp = self.vgg_output
 
         inp = tf.concat(1, [inp, self.action_history], name = name_scope + '_concat')  
         if not target:
@@ -157,11 +172,10 @@ class Agent(BaseModel):
                 q_acted = tf.reduce_sum(self.p_q * action_one_hot, reduction_indices = 1, name = 'q_acted')
 
                 self.dqn_delta = self.dqn_gt_q - q_acted
-                # TBD
-                # self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
+                self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
                 # self.global_step = tf.Varialbe(0, trainable = False)
 
-                self.dqn_loss = tf.sqrt(tf.reduce_mean(tf.square(self.dqn_delta)), name = 'dqn_loss')
+                self.dqn_loss = tf.sqrt(tf.reduce_mean(tf.square(self.clipped_delta)), name = 'dqn_loss')
                 self.dqn_learning_rate_step = tf.placeholder('int64', None, name = 'learning_rate_step')
                 self.dqn_learning_rate_op = tf.maximum(self.learning_rate_minimum,
                         tf.train.exponential_decay(
@@ -314,9 +328,9 @@ class Agent(BaseModel):
             # Debug
             print "[*] Yes Q-Greedy...", 
             #
-            [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.p_inp: self.crop(states), self.keep_prob : self.dropout_prob if self.isTrain else 1.})
+            [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.img_inp: self.crop(states), self.keep_prob : self.dropout_prob if self.isTrain else 1.})
             # Debug
-            # print q_out
+            print q_out
             #
             action = action[0]
         return action
@@ -336,7 +350,7 @@ class Agent(BaseModel):
 
         s, action, reward, s_nxt, terminal, his_code = self.mem.sample(self.batch_size)
 
-        q_nxt = self.sess.run(self.t_q, {self.t_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size, his_code | (1 << action))})
+        q_nxt = self.sess.run(self.t_q, {self.img_inp : self.crop(s_nxt), self.action_history : self.actionArray(self.batch_size, his_code | (1 << action))})
         
         terminal = np.array(terminal) + 0.
         max_q_nxt = np.max(q_nxt, axis = 1)
@@ -345,7 +359,7 @@ class Agent(BaseModel):
         _, q_t, loss = self.sess.run([self.dqn_optim, self.p_q, self.dqn_loss], {
                 self.dqn_gt_q : ground_truth,
                 self.action : action,
-                 self.p_inp : self.crop(s),
+                self.img_inp : self.crop(s),
                 self.dqn_learning_rate_step: self.step,
                 self.action_history: self.actionArray(self.batch_size, his_code),
                 self.keep_prob: self.dropout_prob
@@ -370,8 +384,8 @@ class Agent(BaseModel):
 
         # timer
         st = time.time()
-        for key in self.p_cnn_w.keys():
-            self.sess.run(self.cnn_assign_op[key], {self.cnn_assign_inp[key] : self.sess.run(self.p_cnn_w[key])})
+        # for key in self.p_cnn_w.keys():
+        #     self.sess.run(self.cnn_assign_op[key], {self.cnn_assign_inp[key] : self.sess.run(self.p_cnn_w[key])})
         for key in self.p_dqn_w.keys():
             self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.sess.run(self.p_dqn_w[key])})
 
@@ -410,7 +424,7 @@ class Agent(BaseModel):
             left = s.box[1]
             down = s.box[2]
             right = s.box[3]
-            cropped[cnt] = imresize(self.context_crop(img, up, left, down, right), (224, 224), interp = 'bicubic')
+            cropped[cnt] = imresize(self.context_crop(img, up, left, down, right), (224, 224), interp = 'bicubic') / 255.
             cnt += 1
     
         return cropped
