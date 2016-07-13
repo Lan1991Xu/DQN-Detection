@@ -19,14 +19,14 @@ class Config(object):
         self.learning_rate_minimum = 0.00025
         self.dqn_learning_rate = 0.001
         self.dqn_learning_decay_rate = 0.96
-        self.dqn_learning_decay_step = 100000
+        self.dqn_learning_decay_step = 4096
         self.min_delta = -1 
         self.max_delta = 1 # The bound of delta
         
         # Training Settings
-        self.tot_epoches = 6000 
-        self.decay_epoches = 1500 
-        self.guide_epoches = 2000
+        self.tot_epoches = 2200 
+        self.decay_epoches = 600 
+        self.guide_epoches = 500
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
         self.check_point = 100 
@@ -42,7 +42,7 @@ class Config(object):
         self.dropout_prob = 0.3
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-2200"
+        self.load_path = "./Models/snapshot-2199"
         self.test_accept_rate = 0.5 
         
         # I/O Settings

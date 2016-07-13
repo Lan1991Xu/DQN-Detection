@@ -161,7 +161,7 @@ class Agent(BaseModel):
                 # self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
                 # self.global_step = tf.Varialbe(0, trainable = False)
 
-                self.dqn_loss = tf.reduce_mean(tf.square(self.dqn_delta), name = 'dqn_loss')
+                self.dqn_loss = tf.sqrt(tf.reduce_mean(tf.square(self.dqn_delta)), name = 'dqn_loss')
                 self.dqn_learning_rate_step = tf.placeholder('int64', None, name = 'learning_rate_step')
                 self.dqn_learning_rate_op = tf.maximum(self.learning_rate_minimum,
                         tf.train.exponential_decay(
@@ -249,7 +249,7 @@ class Agent(BaseModel):
             print "Trained on episode %d, step %d:" % (episode, stp)
             print "\tsum reward = %d\n\tcurrent IoU = %.4f" % (cur_sum_reward, self.env.IoU)
 
-            if episode and episode % self.check_point == 0:
+            if episode and episode % self.check_point == self.check_point - 1:
                 self.evaluation()
                 self.record(episode)
 
@@ -353,7 +353,7 @@ class Agent(BaseModel):
 
         self.update_count += 1
         # DEBUG
-        # print "Update_count : %d" % self.update_count, loss
+        print "[i] Update_count : %d" % self.update_count, loss
 
     def actionArray(self, sz, act_his):
         arr = np.zeros([sz, self.action_size], dtype = float)
