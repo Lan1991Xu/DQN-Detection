@@ -95,27 +95,27 @@ class Environment(object):
         self.state.box[0] += stp_size
         self.state.box[2] += stp_size
     def bigger(self):
-        delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
-        delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
-        self.state.box[0] -= delta_x
-        self.state.box[2] += delta_x
-        self.state.box[1] -= delta_y
-        self.state.box[3] += delta_y
+        delta_y = (self.state.box[2] - self.state.box[0]) * self.alpha * 0.5
+        delta_x = (self.state.box[3] - self.state.box[1]) * self.alpha * 0.5
+        self.state.box[0] -= delta_y
+        self.state.box[2] += delta_y
+        self.state.box[1] -= delta_x
+        self.state.box[3] += delta_x
     def smaller(self):
-        delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
-        delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
-        self.state.box[0] += delta_x
-        self.state.box[2] -= delta_x
-        self.state.box[1] += delta_y
-        self.state.box[3] -= delta_y
+        delta_y = (self.state.box[2] - self.state.box[0]) * self.alpha * 0.5
+        delta_x = (self.state.box[3] - self.state.box[1]) * self.alpha * 0.5
+        self.state.box[0] += delta_y
+        self.state.box[2] -= delta_y
+        self.state.box[1] += delta_x
+        self.state.box[3] -= delta_x
     def fatter(self):
-        delta_x = ((self.state.box[0] + self.state.box[2]) * 0.5 - self.state.box[0]) * self.alpha
-        self.state.box[0] += delta_x
-        self.state.box[2] -= delta_x
+        delta_y = (self.state.box[2] - self.state.box[0]) * self.alpha * 0.5
+        self.state.box[0] += delta_y
+        self.state.box[2] -= delta_y
     def taller(self):
-        delta_y = ((self.state.box[1] + self.state.box[3]) * 0.5 - self.state.box[1]) * self.alpha
-        self.state.box[1] += delta_y
-        self.state.box[3] -= delta_y
+        delta_x = (self.state.box[3] - self.state.box[1]) * self.alpha * 0.5
+        self.state.box[1] += delta_x
+        self.state.box[3] -= delta_x
     def trigger_reward(self):
         if self.IoU >= self.tri_thres:
             return self.tri_reward

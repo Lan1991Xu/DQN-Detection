@@ -8,7 +8,7 @@ class Config(object):
         self.move_alpha = 0.15 # The movement size of the bounding_box 
         self.alpha = 0.15 # The rescale rate of the bounding_box
         self.eps = 1e-12
-        self.isTrain = True 
+        self.isTrain = False 
         self.isLoadFromModel = False 
         self.act_his_len = 8 # The length of recent history
 
@@ -19,13 +19,14 @@ class Config(object):
         self.learning_rate_minimum = 0.00025
         self.dqn_learning_rate = 0.001
         self.dqn_learning_decay_rate = 0.96
-        self.dqn_learning_decay_step = 5000
+        self.dqn_learning_decay_step = 100000
         self.min_delta = -1 
         self.max_delta = 1 # The bound of delta
         
         # Training Settings
-        self.tot_epoches = 900 
-        self.decay_epoches = 450 
+        self.tot_epoches = 6000 
+        self.decay_epoches = 1500 
+        self.guide_epoches = 2000
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 
         self.check_point = 100 
@@ -33,8 +34,7 @@ class Config(object):
         self.act_ep = 1. # The epsilon hyperparameter of epsilon-policy
         self.act_ep_threshold = 0.15 # The lower bound of epsilon
         self.batch_size = 1 
-        self.learning_start_point = 0
-        self.update_C = 32  
+        self.update_C = 64 
         self.discount = 0.9 
         self.accept_rate = 0.95 
         self.train_start_point = 0 
@@ -42,7 +42,7 @@ class Config(object):
         self.dropout_prob = 0.3
 
         # Testing Settings
-        self.load_path = "./Models/snapshot-80"
+        self.load_path = "./Models/snapshot-2200"
         self.test_accept_rate = 0.5 
         
         # I/O Settings

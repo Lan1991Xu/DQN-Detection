@@ -194,11 +194,9 @@ class Agent(BaseModel):
         self.mem.reset()
         self.step = 0
 
-        self.epi_size -= self.train_start_point
-
         data_size = self.env.get_size('train')
-        if self.epi_size > data_size:
-            self.epi_size = data_size
+        if self.epi_size > data_size - self.train_start_point:
+            self.epi_size = data_size - self.train_start_point
 
         # Debug
         # print data_size
@@ -206,14 +204,15 @@ class Agent(BaseModel):
         #
 
         self.ep_decay_step = (self.act_ep - self.act_ep_threshold) / (1. * data_size / self.tot_epoches * self.decay_epoches)
-        self.act_ep -= self.ep_decay_step * self.train_start_point
+        self.guide_period = self.guide_epoches * (data_size / self.tot_epoches)
+        self.act_ep -= self.ep_decay_step * max(0., self.train_start_point - self.guide_period)
         if self.act_ep < self.act_ep_threshold:
             self.act_ep = self.act_ep_threshold
 
         # start the env.dataset.readerqueue
         self.env.start()
 
-        for episode in xrange(self.epi_size):
+        for episode in xrange(self.train_start_point + 1, self.epi_size, 1):
             # initialize the environment for each episode
             state = self.env.reset()   
             state = State(state.img, state.height, state.width)
@@ -229,38 +228,33 @@ class Agent(BaseModel):
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # Debug
-                print "Done action %s: Ep %d, Epsilon %.3f, Step %d" % (act_dic[action], episode + self.train_start_point, self.act_ep, stp)
+                print "Done action %s: Ep %d, Epsilon %.3f, Step %d" % (act_dic[action], episode, self.act_ep, stp)
                 #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal, self.action_his_code)
 
                 if terminal:
+                    cur_sum_reward += reward
                     break
                 else:
                     state = nxt_state
                     self.his_add(action)
 
-                # info
+                # Debug 
                 cur_sum_reward += reward
-                # print "Trained on episode %d, step %d:" % (episode, stp)
-                # print "\tstep reward = %d, current sum reward = %d\n\tcurrent IoU = %.4f" % (reward, cur_sum_reward, self.env.IoU)
-                # box = self.env.state.box
-                # gt = self.env.ground_truth
-                # print "\tbox:\t%d %d %d %d" % (box[0], box[1], box[2], box[3])
-                # print "\tgt: \t%d %d %d %d" % (gt[0], gt[1], gt[2], gt[3])
 
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
             # Debug
-            print "Trained on episode %d, step %d:" % (episode + self.train_start_point + 1, stp)
+            print "Trained on episode %d, step %d:" % (episode, stp)
             print "\tsum reward = %d\n\tcurrent IoU = %.4f" % (cur_sum_reward, self.env.IoU)
 
             if episode and episode % self.check_point == 0:
                 self.evaluation()
-                self.record(episode + self.train_start_point)
+                self.record(episode)
 
             # epsilon decay
-            if self.act_ep > self.act_ep_threshold:
+            if episode >= self.guide_period and self.act_ep > self.act_ep_threshold:
                 self.act_ep -= self.ep_decay_step
 
         # close the env.dataset.readerqueue
@@ -313,7 +307,7 @@ class Agent(BaseModel):
     def predict(self, states):
         if self.isTrain and random.random() <= self.act_ep:
             # Debug
-            print "[*] Not Q-Greedy...",
+            print "[x] Not Q-Greedy...",
             #
             action = self.env.get_random_positive() 
         else:
@@ -329,16 +323,14 @@ class Agent(BaseModel):
 
     def observe(self, state, action, reward, nxt_state, terminal, his_code):
         self.mem.add(state, action, reward, nxt_state, terminal, his_code)
-        if self.step < self.learning_start_point:
-            return
 
         # gradient descent
-        self.mini_batch_gradient_descent()
+        self.stochastic_gradient_descent()
         # update target net every C steps
         if self.step % self.update_C == 0:
             self.update_target_net()
 
-    def mini_batch_gradient_descent(self):
+    def stochastic_gradient_descent(self):
         if self.mem.count < self.batch_size:
             return
 
@@ -400,7 +392,7 @@ class Agent(BaseModel):
         self.his_cnt += 1
         self.action_his_code = 0
         for x in xrange(min(8, self.his_cnt)):
-            self.action_his_code |= self.action_status[(self.his_head + x) % self.act_his_len]
+            self.action_his_code |= 1 << self.action_status[(self.his_head + x) % self.act_his_len]
 
     def context_crop(self, img, up, left, down, right):
         up = max(0, up - 1 - 16)
@@ -409,10 +401,6 @@ class Agent(BaseModel):
         right = min(img.shape[1], right + 16)
         return img[int(up): int(down), int(left): int(right), :]
     def crop(self, states):
-        # timer
-        c_st = time.time()
-        st = time.time()
-        #
         cropped = np.empty([states.shape[0], 224, 224, 3], dtype = np.float32)
         cnt = 0
 
