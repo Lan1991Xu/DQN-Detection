@@ -23,6 +23,7 @@ class Agent(BaseModel):
         self.build_vgg()
         self.action_history = tf.placeholder('float32', [None, config.action_size], 'action_history')
         self.loss_logger = None
+        self.action_logger = None
         self.build_dqn_net(False)
         self.build_dqn_net(True)
         self.mem = Memory(config.mem_capacity)
@@ -142,13 +143,13 @@ class Agent(BaseModel):
             inp = tf.nn.dropout(inp, self.keep_prob)
 
         with tf.variable_scope(name_scope):
-            # DQN_fc1
-            l1, cur_w['l1_w'], cur_w['l1_b'] = fc_layer(inp, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l1')
-            if not target:
-                l1 = tf.nn.dropout(l1, self.keep_prob) 
+            # # DQN_fc1
+            # l1, cur_w['l1_w'], cur_w['l1_b'] = fc_layer(inp, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l1')
+            # if not target:
+            #     l1 = tf.nn.dropout(l1, self.keep_prob) 
 
             # DQN_fc2
-            l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(l1, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
+            l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(inp, 512, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
             if not target:
                 l2 = tf.nn.dropout(l2, self.keep_prob) 
 
@@ -176,7 +177,7 @@ class Agent(BaseModel):
                 self.clipped_delta = tf.clip_by_value(self.dqn_delta, self.min_delta, self.max_delta, name = 'clipped_delta')
                 # self.global_step = tf.Varialbe(0, trainable = False)
 
-                self.dqn_loss = tf.sqrt(tf.reduce_mean(tf.square(self.clipped_delta)), name = 'dqn_loss')
+                self.dqn_loss = tf.reduce_mean(tf.square(self.clipped_delta), name = 'dqn_loss')
                 self.dqn_learning_rate_step = tf.placeholder('int64', None, name = 'learning_rate_step')
                 self.dqn_learning_rate_op = tf.maximum(self.learning_rate_minimum,
                         tf.train.exponential_decay(
@@ -228,7 +229,10 @@ class Agent(BaseModel):
         self.env.start()
 
         # logging loss
-        self.loss_logger = open('loss_log', 'w')
+        self.loss_logger = open(self.loss_log_file, 'w')
+        self.action_logger = open(self.action_log_file, 'w')
+        
+        avg_rwd_per_epi = 0.
 
         for episode in xrange(self.train_start_point + 1, self.epi_size, 1):
             # initialize the environment for each episode
@@ -246,7 +250,7 @@ class Agent(BaseModel):
                 # act
                 nxt_state, reward, terminal = self.env.act(action)
                 # Debug
-                print "Done action %s: Ep %d, Epsilon %.3f, Step %d" % (act_dic[action], episode, self.act_ep, stp)
+                self.action_logger.write("Done action %s: Ep %d, Epsilon %.3f, Step %d\n" % (act_dic[action], episode, self.act_ep, stp))
                 #
                 # observe
                 self.observe(state, action, reward, nxt_state, terminal, self.action_his_code)
@@ -261,11 +265,14 @@ class Agent(BaseModel):
                 # Debug 
                 cur_sum_reward += reward
 
+            avg_rwd_per_epi = avg_rwd_per_epi + (cur_sum_reward - avg_rwd_per_epi) / (episode + 1.)
+
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
             # Debug
-            print "Trained on episode %d, step %d:" % (episode, stp)
+            print "Trained on episode %d:" % (episode)
             print "\tsum reward = %d\n\tcurrent IoU = %.4f" % (cur_sum_reward, self.env.IoU)
+            print "\taverage reward per epi = %.4f" % avg_rwd_per_epi
 
             if episode and episode % self.check_point == self.check_point - 1:
                 self.evaluation()
@@ -278,8 +285,9 @@ class Agent(BaseModel):
         # close the env.dataset.readerqueue
         self.env.end()
         # close loss_logger
-        self.loss_logger.close()
         self.update_target_net()
+        self.loss_logger.close()
+        self.action_logger.close()
 
     def play(self):
         ac = 0
@@ -301,9 +309,11 @@ class Agent(BaseModel):
             for stp in xrange(self.step_size):
                 # predict
                 action = self.predict(np.array([state]))
-                print action
+                # Debug
+                print self.env.state.box 
                 # act
                 state, reward, terminal = self.env.act(action)
+                print action
 
                 if terminal:
                     total_step = stp + 1
@@ -327,16 +337,18 @@ class Agent(BaseModel):
     def predict(self, states):
         if self.isTrain and random.random() <= self.act_ep:
             # Debug
-            print "[x] Not Q-Greedy...",
+            if self.action_logger != None:
+                self.action_logger.write("[x] Not Q-Greedy...")
             #
             action = self.env.get_random_positive() 
         else:
             # Debug
-            print "[*] Yes Q-Greedy...", 
+            if self.action_logger != None:
+                self.action_logger.write("[*] Yes Q-Greedy...") 
             #
             [action, q_out] = self.sess.run([self.q_action, self.p_q], {self.action_history : self.actionArray(1, [self.action_his_code]), self.img_inp: self.crop(states), self.keep_prob : self.dropout_prob if self.isTrain else 1.})
             # Debug
-            print q_out
+            self.action_logger.write(str(q_out) + '\n')
             #
             action = action[0]
         return action
@@ -440,4 +452,4 @@ class Agent(BaseModel):
         pass 
 
     def record(self, epi_step):
-        telf.save_model(step = epi_step)
+        self.save_model(step = epi_step)
