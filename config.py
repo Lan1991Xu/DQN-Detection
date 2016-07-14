@@ -8,7 +8,7 @@ class Config(object):
         self.move_alpha = 0.15 # The movement size of the bounding_box 
         self.alpha = 0.15 # The rescale rate of the bounding_box
         self.eps = 1e-12
-        self.isTrain = False 
+        self.isTrain = True 
         self.isLoadFromModel = False 
         self.act_his_len = 8 # The length of recent history
 
@@ -16,16 +16,16 @@ class Config(object):
         self.ini_mean = 0.0
         self.ini_stddev = 0.02 # Ini_* are weights initialize hyperparameters
         self.bias_starter = 0.0 # Bias initialize hyperparameters
-        self.learning_rate_minimum = 0.00025
-        self.dqn_learning_rate = 0.001
+        self.learning_rate_minimum = 0.000025
+        self.dqn_learning_rate = 0.0001
         self.dqn_learning_decay_rate = 0.96
         self.dqn_learning_decay_step = 2048
-        self.min_delta = -100 
-        self.max_delta = 100 # The bound of delta
+        self.min_delta = -1 
+        self.max_delta = 1 # The bound of delta
         
         # Training Settings
-        self.tot_epoches = 1200 
-        self.decay_epoches = 400 
+        self.tot_epoches = 300 
+        self.decay_epoches = 50 
         self.guide_epoches = 0 
         self.epi_size = 80000 # The episodes size
         self.step_size = 40 

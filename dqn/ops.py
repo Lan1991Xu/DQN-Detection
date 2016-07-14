@@ -31,10 +31,10 @@ def fc_layer(inp,
             b_initializer = tf.constant_initializer(0.0),
             activation = None,
             name = 'linearfc'):
-    shape = inp.get_shape()[1].value
+    shape = inp.get_shape().as_list()
     
     with tf.variable_scope(name):
-        w = tf.get_variable('w', [shape, output_dim], tf.float32, w_initializer)
+        w = tf.get_variable('w', [shape[1], output_dim], tf.float32, w_initializer)
         b = tf.get_variable('b', [output_dim], initializer = b_initializer)
 
         out = tf.nn.bias_add(tf.matmul(inp, w), b)

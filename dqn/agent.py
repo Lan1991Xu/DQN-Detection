@@ -22,6 +22,7 @@ class Agent(BaseModel):
         # self.build_cnn_net(True)
         self.build_vgg()
         self.action_history = tf.placeholder('float32', [None, config.action_size], 'action_history')
+        self.loss_logger = None
         self.build_dqn_net(False)
         self.build_dqn_net(True)
         self.mem = Memory(config.mem_capacity)
@@ -226,6 +227,9 @@ class Agent(BaseModel):
         # start the env.dataset.readerqueue
         self.env.start()
 
+        # logging loss
+        self.loss_logger = open('loss_log', 'w')
+
         for episode in xrange(self.train_start_point + 1, self.epi_size, 1):
             # initialize the environment for each episode
             state = self.env.reset()   
@@ -273,6 +277,8 @@ class Agent(BaseModel):
 
         # close the env.dataset.readerqueue
         self.env.end()
+        # close loss_logger
+        self.loss_logger.close()
         self.update_target_net()
 
     def play(self):
@@ -367,7 +373,7 @@ class Agent(BaseModel):
 
         self.update_count += 1
         # DEBUG
-        print "[i] Update_count : %d" % self.update_count, loss
+        self.loss_logger.write("[i] Update_count: %d, loss = %.4f\n" % (self.update_count, loss))
 
     def actionArray(self, sz, act_his):
         arr = np.zeros([sz, self.action_size], dtype = float)
@@ -390,7 +396,8 @@ class Agent(BaseModel):
             self.sess.run(self.dqn_assign_op[key], {self.dqn_assign_inp[key] : self.sess.run(self.p_dqn_w[key])})
 
         # timer
-        print "Spent %.4fsecs assigning..." % (time.time() - st)
+        if self.loss_logger != None:
+            self.loss_logger.write("Spent %.4fsecs assigning...\n" % (time.time() - st))
         st = time.time()
         #
 
@@ -433,4 +440,4 @@ class Agent(BaseModel):
         pass 
 
     def record(self, epi_step):
-        self.save_model(step = epi_step)
+        telf.save_model(step = epi_step)
