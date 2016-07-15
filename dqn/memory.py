@@ -15,29 +15,23 @@ class Memory(object):
         self.reset()
 
     def reset(self):
-        self.full = False
         self.count = 0
         self.mem_start = 0
-        self.mem_end = 0
 
     def add(self, sta, act, rew, nxt, term, his_code):
-        if self.count == self.mem_size - 1:
-            self.full = True
-            self.count += 1
-        if not self.full:
-            self.count += 1
+        if self.count >= self.mem_size:
+            p = self.mem_start
+            self.mem_start = (self.mem_start + 1) % self.mem_size
+        else:
+            p = self.mem_start + self.count
+        self.count += 1
         
-        p = self.mem_end
-        self.s[p] = sta
+        self.s[p] = State(same = sta)
         self.act[p] = act
         self.rew[p] = rew
-        self.nxt[p] = nxt
+        self.nxt[p] = State(same = nxt)
         self.term[p] = term
         self.his_code[p] = his_code
-
-        self.mem_end = (self.mem_end + 1) % self.mem_size
-        if self.mem_end == self.mem_start:
-            self.mem_start = (self.mem_start + 1) % self.mem_size
 
     def sample(self, batch_size):    
         idx = np.random.randint(0, self.count, batch_size)

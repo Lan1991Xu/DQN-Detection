@@ -43,8 +43,7 @@ class Agent(BaseModel):
         self.img_inp = tf.placeholder('float32', [None, 224, 224, 3])
         tf.import_graph_def(graph_def, input_map = {'images': self.img_inp})
 
-        self.vgg_output = tf.get_default_graph().get_tensor_by_name('import/Relu:0')
-
+        self.vgg_output = tf.get_default_graph().get_tensor_by_name('import/Relu_1:0')
 
     # def build_cnn_net(self, target):
     #     """build cnn_net part
@@ -143,13 +142,13 @@ class Agent(BaseModel):
             inp = tf.nn.dropout(inp, self.keep_prob)
 
         with tf.variable_scope(name_scope):
-            # # DQN_fc1
-            # l1, cur_w['l1_w'], cur_w['l1_b'] = fc_layer(inp, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l1')
-            # if not target:
-            #     l1 = tf.nn.dropout(l1, self.keep_prob) 
+            # dqn_fc1
+            l1, cur_w['l1_w'], cur_w['l1_b'] = fc_layer(inp, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l1')
+            if not target:
+                l1 = tf.nn.dropout(l1, self.keep_prob) 
 
             # DQN_fc2
-            l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(inp, 512, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
+            l2, cur_w['l2_w'], cur_w['l2_b'] = fc_layer(l1, 1024, activation = activation, w_initializer = w_initializer, b_initializer = b_initializer, name = 'dqn_l2')
             if not target:
                 l2 = tf.nn.dropout(l2, self.keep_prob) 
 
@@ -265,7 +264,7 @@ class Agent(BaseModel):
                 # Debug 
                 cur_sum_reward += reward
 
-            avg_rwd_per_epi = avg_rwd_per_epi + (cur_sum_reward - avg_rwd_per_epi) / (episode + 1.)
+            avg_rwd_per_epi = avg_rwd_per_epi + (cur_sum_reward - avg_rwd_per_epi) / (episode + 0.)
 
             # Demonstrate the final result concerning the task
             # print "Epoch %d, IoU = %.4f" % (episode, self.env.IoU)
@@ -275,7 +274,6 @@ class Agent(BaseModel):
             print "\taverage reward per epi = %.4f" % avg_rwd_per_epi
 
             if episode and episode % self.check_point == self.check_point - 1:
-                self.evaluation()
                 self.record(episode)
 
             # epsilon decay
@@ -297,6 +295,9 @@ class Agent(BaseModel):
         # load model
         self.load_model()
 
+        # action logger
+        self.action_logger = open(self.action_log_file, 'w')
+
         self.env.start()
         print "[*] Starting test..."
         for epi in xrange(total):
@@ -310,10 +311,10 @@ class Agent(BaseModel):
                 # predict
                 action = self.predict(np.array([state]))
                 # Debug
-                print self.env.state.box 
+                self.action_logger.write(str(self.env.state.box) + '\n')
                 # act
                 state, reward, terminal = self.env.act(action)
-                print action
+                self.action_logger.write(str(action) + '\n')
 
                 if terminal:
                     total_step = stp + 1
@@ -328,11 +329,11 @@ class Agent(BaseModel):
             else:
                 print "[!] Missed. IoU = %.4f, total_step = %d" % (self.env.IoU, total_step)
 
-            print "[*] Tested %d of %d, current AP = %.4f (%d/%d)" % (epi + 1, total, ac * 1. / (epi + 1.), ac, epi + 1)
+            print "[*] Tested %d of %d, current AP = %.4f (%d/%d)" % (epi + 0, total, ac * 1. / (epi + 0.), ac, epi + 1)
 
         self.env.end()
         print "[*] Finish test."
-        print "[*] Final Ap = %.4f (%d/%d)" % (ac * 1. / (total + 1.), ac, total)
+        print "[*] Final Ap = %.4f (%d/%d)" % (ac * 1. / (total + 0.), ac, total)
 
     def predict(self, states):
         if self.isTrain and random.random() <= self.act_ep:
@@ -433,6 +434,7 @@ class Agent(BaseModel):
         down = min(img.shape[0], down + 16)
         right = min(img.shape[1], right + 16)
         return img[int(up): int(down), int(left): int(right), :]
+
     def crop(self, states):
         cropped = np.empty([states.shape[0], 224, 224, 3], dtype = np.float32)
         cnt = 0
@@ -447,9 +449,6 @@ class Agent(BaseModel):
             cnt += 1
     
         return cropped
-
-    def evaluation(self):
-        pass 
 
     def record(self, epi_step):
         self.save_model(step = epi_step)

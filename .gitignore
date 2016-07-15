@@ -5,3 +5,4 @@ Models/
 Snapshots/
 to_test
 *log*
+loss_log

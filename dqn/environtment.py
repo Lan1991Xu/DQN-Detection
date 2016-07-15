@@ -6,11 +6,16 @@ from .dataset import Dataset
 from config import Config
 
 class State(object):
-    def __init__(self, img, height, width):
-        self.img = img
-        self.height, self.width = height + 0., width + 0. 
-        # box = [top, left, down, right]
-        self.box = [1., 1., self.height, self.width]  
+    def __init__(self, img = 0, height = 0, width = 0, same = None):
+        if same == None:
+            self.img = img
+            self.height, self.width = height + 0., width + 0. 
+            # box = [top, left, down, right]
+            self.box = [1., 1., self.height, self.width]  
+        else:
+            self.img = same.img
+            self.height, self.width = same.height, same.width
+            self.box = np.copy(same.box)
 
     def clip_box(self):
         self.box[0] = max(self.box[0], 1.)
@@ -129,7 +134,7 @@ class Environment(object):
             self.ground_truth, pic = self.data.get_data('test', self.sess)
 
         img = self.sess.run(pic)
-        self.state = State(img, img.shape[0], img.shape[1])
+        self.state = State(img = img, height = img.shape[0], width = img.shape[1])
 
         self._calc_IoU()
 
